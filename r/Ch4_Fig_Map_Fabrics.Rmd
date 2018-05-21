@@ -1,0 +1,181 @@
+---
+title: "4 Fabrics"
+output: html_notebook
+---
+
+Für die Kreisdiagramme siehe: https://cran.r-project.org/web/packages/scatterpie/vignettes/scatterpie.html
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+library(ggsn)
+library(ggthemes)
+library(plyr)
+library(raster)
+library(reshape2)
+library(rgdal)
+library(RSQLite)
+library(scatterpie)
+library(sp)
+library(viridis)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+# Geodaten
+
+```{r}
+epsg <- 4326
+crs <- paste("+init=epsg:",epsg,"", sep="")
+
+# https://github.com/tidyverse/ggplot2/wiki/plotting-polygon-shapefiles
+countries <- readOGR(dsn = "../GIS/vector", layer = "ne_110m_admin_0_countries", verbose = FALSE)
+countries@data$id = rownames(countries@data)
+countries.points = fortify(countries, region="id")
+countries.points$id <-as.numeric(countries.points$id)
+countries.df = join(countries.points, countries@data, by="id")
+
+
+OSM_rivers_line <- readOGR(dsn = "../GIS/vector", layer = "OSM_rivers_line", verbose = FALSE)
+
+OSM_rivers_poly <- readOGR(dsn = "../GIS/vector", layer = "OSM_rivers_poly", verbose = FALSE)
+
+DEM <- raster("../GIS/raster/strm30/Africa_merge.tif")
+#DEM <- projectRaster(DEM, crs = "+init=epsg:4326" ) 
+
+# bounding box https://julyonr.wordpress.com/2015/10/23/create-a-rectangle-spatialpolygonsdataframe-from-scratch/
+x1 = 15
+x2 = 25
+y1 = -5
+y2 = 9
+myPolygon = Polygon(cbind(c(x1,x1,x2,x2,x1),c(y1,y2,y2,y1,y1)))
+myPolygons = Polygons(list(myPolygon), ID = "A")
+SpPolygon = SpatialPolygons(list(myPolygons))
+crs(SpPolygon) <- CRS("+proj=longlat +datum=WGS84")
+
+# DEM auf boundig-box clippen:
+
+DEM <- crop(DEM, extent(SpPolygon))
+#DEM <- mask(DEM, SpPolygon) # nur, wenn boundig box keine Rechteck
+
+# diskrete 'Höhenscheiben'
+DEM.reclas <- reclassify(DEM, c(min(getValues(DEM)), 400, 400,
+                       400, 500, 500, 
+                       500, 600, 600, 
+                       600, 700, 700,
+                       700, 800, 800, 
+                       800, max(getValues(DEM)), max(getValues(DEM))))
+
+DEM.spdf <- as(DEM.reclas, "SpatialPixelsDataFrame")
+DEM.df <- as.data.frame(DEM.spdf)
+colnames(DEM.df) <- c("value", "x", "y")
+```
+
+# Fachdaten
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           t_Obj.objID,
+           t_Ort.ort_kurz,
+           t_Ort.ort_name,
+           t_Ort.x_long AS X, 
+           t_Ort.y_lat AS Y, 
+           t_Obj.Anzahl,
+           t_Obj.Fabric
+       FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID)
+           INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+       WHERE (((t_Obj.Fabric) != '')
+           AND ((t_Obj.Fabric) Not Like '%/%')
+           AND ((t_Obj.Fabric) Not Like '%(?)%')
+           AND ((t_Ort.ort_lit) = 'DS'))")
+
+# nur grober Typ (alle Buchstaben raus):
+df$Fabric <- gsub("[^0-9]", "", df$Fabric)
+
+df_pivot <- dcast(df, ort_name + X + Y ~ Fabric)
+
+# Um Einzelfunde und sehr kleine Inventare aus der Beobachtung herauszuhalten wird eine Schwellwert von mind. 5 Stücken je Fpl. definiert. Alle Fpl. mit weniger Stücken werden entfernt:
+df_pivot <- df_pivot[rowSums(df_pivot[, 4:12]) >= 5,]
+```
+
+# Kartierung
+
+siehe 1_Einleitung.Rmd
+
+```{r}
+g1 <- ggplot() + 
+  #geom_tile(data = DEM.df, aes(x = x, y = y, alpha = value)) + 
+  #scale_alpha(name = "", range = c(0, 0.2), guide = F) + 
+  geom_path(data = OSM_rivers_line, 
+            aes(long, lat, group = group, fill=NULL),
+            size = 0.5,   
+            colour  = "#c4c4c4") + 
+  geom_polygon(data = OSM_rivers_poly, 
+              aes(long, lat, group = group, fill=hole),
+              size = 0.2, 
+              colour  = "#c4c4c4") +  
+              #fill = "#c4c4c4") + 
+  #scale_fill_manual(values=c("#c4c4c4", "white"), guide="none") + 
+  geom_scatterpie(data = df_pivot, aes(x = X, y = Y, r = 0.05),
+                  cols = seq(1:9)) + 
+  #scale_fill_manual(values=c("#e41a1c", "#FF7F00", "#4DAF4A", "#377EB8", "#984EA3", "#999999", "#A65628", "#F781BF", "#FFFF33")) + 
+  # für alle zusammen:;
+  scale_fill_manual(values=c("#e41a1c", "#FF7F00", "#4DAF4A", "#377EB8", "#984EA3", "#999999", "#A65628", "#F781BF", "#FFFF33", "#c4c4c4", "white"), guide="none") + 
+  geom_label_repel(data = df_pivot, aes(x = X, 
+                                  y = Y, 
+                                  label = ort_name), 
+                  point.padding = unit(5, 'mm'),
+                  label.size = NA, 
+                  size = 4, 
+                  fill = 'white', 
+                  color = 'black',
+                  #box.padding = unit(1, "lines"),
+                  segment.color = 'black') + 
+  coord_equal(xlim=c(15.222, 20.375),
+              ylim=c(-1.476,5.78)) + 
+  #coord_map("mercator") + 
+  north(location = 'topleft', scale = 1, symbol = 1,
+        x.min = 15.7, x.max = 16,
+        y.min = 3.7, y.max = 4) + 
+  scalebar(location = "topleft", dist = 50, height = 0.05,
+           dd2km = TRUE, model = 'WGS84',           
+           x.min = 15.4, x.max = 18,
+           y.min = 3.25, y.max = 4.25, 
+           st.dist = 0.05, st.size = 4) +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = round(seq(min(df$X), max(df$X), by = 1),0)) + 
+  scale_y_continuous(expand = c(0, 0), 
+                     breaks = round(seq(min(df$Y), max(df$Y), by = 1),0)) + 
+  labs(x="Longitude (WGS84)", y="Latitude") + 
+  theme_few() + 
+  theme(axis.text=element_text(size=12))
+
+g2 <- ggplotGrob(
+  ggplot() + 
+  geom_polygon(data = countries.df, 
+               aes(long, lat, group = group),
+               size = 0.2, 
+               colour = 'white', fill = "#c4c4c4") + 
+  geom_rect(mapping = aes(xmin = 15.222, xmax = 20.375, 
+                          ymin = -1.476, ymax = 5.78), 
+            alpha = 0, color="black", size = 0.5) + 
+  coord_equal() + 
+  #coord_map("mercator") + 
+  scale_x_continuous(limits = c(-20, 55.75), expand = c(0, 0)) + 
+  scale_y_continuous(limits = c(-40, 45), expand = c(0, 0)) + 
+  theme_map() + 
+  theme(panel.background = element_rect(fill = 'white'), 
+        panel.border = element_rect(colour  = 'black', fill=NA, size = 1))
+)
+
+g3 <- g1 + 
+  annotation_custom(grob = g2, 
+                    xmin = 15.222, xmax = 16.5,
+                    ymin = 4.25, ymax = 5.78)
+
+g3
+ggsave(g3, filename = "../output/figs/4_FabricsDistribution.pdf", 
+       width = 8.26*2, height = 11.69*2)
+ggsave(g3, filename = "../output/figs/4_FabricsDistribution.jpg", width = 8.26*2, height = 11.69*2, units = "in", dpi = 300)
+```

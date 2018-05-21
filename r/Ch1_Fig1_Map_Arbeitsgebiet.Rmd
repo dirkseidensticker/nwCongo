@@ -1,0 +1,166 @@
+---
+title: "1 Einleitung"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+library(ggsn)
+library(ggthemes)
+library(plyr)
+library(raster)
+library(rgdal)
+library(RSQLite)
+library(sp)
+library(viridis)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+# Geodaten
+
+```{r}
+epsg <- 4326
+crs <- paste("+init=epsg:",epsg,"", sep="")
+
+# https://github.com/tidyverse/ggplot2/wiki/plotting-polygon-shapefiles
+countries <- readOGR(dsn = "../GIS/vector", layer = "ne_110m_admin_0_countries", verbose = FALSE)
+countries@data$id = rownames(countries@data)
+countries.points = fortify(countries, region="id")
+countries.points$id <-as.numeric(countries.points$id)
+countries.df = join(countries.points, countries@data, by="id")
+
+
+OSM_rivers_line <- readOGR(dsn = "../GIS/vector", layer = "OSM_rivers_line", verbose = FALSE)
+
+OSM_rivers_poly <- readOGR(dsn = "../GIS/vector", layer = "OSM_rivers_poly", verbose = FALSE)
+
+DEM <- raster("../GIS/raster/strm30/Africa_merge.tif")
+#DEM <- projectRaster(DEM, crs = "+init=epsg:4326" ) 
+
+# bounding box https://julyonr.wordpress.com/2015/10/23/create-a-rectangle-spatialpolygonsdataframe-from-scratch/
+x1 = 15
+x2 = 25
+y1 = -5
+y2 = 9
+myPolygon = Polygon(cbind(c(x1,x1,x2,x2,x1),c(y1,y2,y2,y1,y1)))
+myPolygons = Polygons(list(myPolygon), ID = "A")
+SpPolygon = SpatialPolygons(list(myPolygons))
+crs(SpPolygon) <- CRS("+proj=longlat +datum=WGS84")
+
+# DEM auf boundig-box clippen:
+
+DEM <- crop(DEM, extent(SpPolygon))
+#DEM <- mask(DEM, SpPolygon) # nur, wenn boundig box keine Rechteck
+
+# diskrete 'Höhenscheiben'
+DEM.reclas <- reclassify(DEM, c(min(getValues(DEM)), 400, 400,
+                       400, 500, 500, 
+                       500, 600, 600, 
+                       600, 700, 700,
+                       700, 800, 800, 
+                       800, max(getValues(DEM)), max(getValues(DEM))))
+
+DEM.spdf <- as(DEM.reclas, "SpatialPixelsDataFrame")
+DEM.df <- as.data.frame(DEM.spdf)
+colnames(DEM.df) <- c("value", "x", "y")
+```
+
+
+# Fachdaten
+
+```{r}
+df = dbGetQuery(con, "SELECT 
+                  t_Ort.ort_name, 
+                  t_Ort.x_long, 
+                  t_Ort.y_lat 
+                FROM t_Ort 
+                WHERE (((t_Ort.y_lat) <> '') 
+                  AND ((t_Ort.ort_lit) Like '%DS%'))")
+head(df)
+```
+
+für Legende siehe https://github.com/3wen/legendMap
+
+* https://ryanpeek.github.io/2016-09-28-static_maps_in_R/
+* http://rpsychologist.com/working-with-shapefiles-projections-and-world-maps-in-ggplot
+* https://gis.stackexchange.com/a/222877
+* ggsn: https://cran.r-project.org/web/packages/ggsn/ggsn.pdf
+
+# Kartierung
+
+```{r}
+g1 <- ggplot() + 
+  #geom_tile(data = DEM.df, aes(x = x, y = y, alpha = value)) + 
+  #scale_alpha(name = "", range = c(0, 0.2), guide = F) + 
+  geom_path(data = OSM_rivers_line, 
+            aes(long, lat, group = group, fill=NULL),
+            size = 0.5,   
+            colour  = "#c4c4c4") + 
+  geom_polygon(data = OSM_rivers_poly, 
+              aes(long, lat, group = group, fill=hole),
+              size = 0.2, 
+              colour  = "#c4c4c4") +  
+              #fill = "#c4c4c4") + 
+  scale_fill_manual(values=c("#c4c4c4", "white"), guide="none") + 
+  geom_point(data = df, aes(x = x_long, y = y_lat)) + 
+  geom_label_repel(data = df, aes(x = x_long, 
+                                  y = y_lat, 
+                                  label = ort_name), 
+                  label.size = NA, 
+                  size = 4, 
+                  fill = 'white', 
+                  color = 'black',
+                  #box.padding = unit(0.001, "lines"),
+                  segment.color = 'black') + 
+  coord_equal(xlim=c(15.222, 20.375),
+              ylim=c(-1.476,5.78)) + 
+  #coord_map("mercator") + 
+  north(location = 'topleft', scale = 1, symbol = 1,
+        x.min = 15.7, x.max = 16,
+        y.min = 3.7, y.max = 4) + 
+  scalebar(location = "topleft", dist = 50, height = 0.05,
+           dd2km = TRUE, model = 'WGS84',           
+           x.min = 15.4, x.max = 18,
+           y.min = 3.25, y.max = 4.25, 
+           st.dist = 0.05, st.size = 4) +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = round(seq(min(df$x_long), max(df$x_long), by = 1),0)) + 
+  scale_y_continuous(expand = c(0, 0), 
+                     breaks = round(seq(min(df$y_lat), max(df$y_lat), by = 1),0)) + 
+  labs(x="Longitude (WGS84)", y="Latitude") + 
+  theme_few() + 
+  theme(axis.text=element_text(size=12))
+
+g2 <- ggplotGrob(
+  ggplot() + 
+  geom_polygon(data = countries.df, 
+               aes(long, lat, group = group),
+               size = 0.2, 
+               colour = 'white', fill = "#c4c4c4") + 
+  geom_rect(mapping = aes(xmin = 15.222, xmax = 20.375, 
+                          ymin = -1.476, ymax = 5.78), 
+            alpha = 0, color="black", size = 0.5) + 
+  coord_equal() + 
+  #coord_map("mercator") + 
+  scale_x_continuous(limits = c(-20, 55.75), expand = c(0, 0)) + 
+  scale_y_continuous(limits = c(-40, 45), expand = c(0, 0)) + 
+  theme_map() + 
+  theme(panel.background = element_rect(fill = 'white'), 
+        panel.border = element_rect(colour  = 'black', fill=NA, size = 1))
+)
+
+g3 <- g1 + 
+  annotation_custom(grob = g2, 
+                    xmin = 15.222, xmax = 16.5,
+                    ymin = 4.25, ymax = 5.78)
+
+g3
+ggsave(g3, filename = "../output/figs/1_Fundstellen.pdf", 
+#       width = 8.26, height = 11.69)
+       width = 8.26*2, height = 11.69*2)
+# ggsave(filename = "./figs/site_map_ggplot.png", width = 6, height = 6, units = "in", dpi = 300)
+
+```

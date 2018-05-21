@@ -1,0 +1,103 @@
+---
+title: "Kap. 4 Verteilung Fabrics"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(plyr)
+library(RSQLite)
+library(splitstackshape)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           t_Obj.objID, 
+           t_Obj.Fabric,
+           t_Obj.Typ
+       FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID)
+         INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+       WHERE (((t_Ort.ort_lit)='DS')
+          AND ((t_Obj.Fabric) != '')
+          AND ((t_Obj.Fabric) Not Like '%?%')
+          AND ((t_Obj.Fabric) Not Like '%/%')
+          AND ((t_Obj.Typ) Not Like '%(?)%')
+          AND ((t_Obj.Typ) Not Like '%/%')
+          AND ((t_Obj.Typ) Not Like '%LUS%'))")
+
+# bei den Fabrics die Untergruppen 'abschneiden'
+df$Fabric <- substring(df$Fabric, 1, 1)
+df$Fabric <- as.integer(df$Fabric)
+
+# Übersetzung der Stilgruppen-Krüzel
+stilgr <- read.csv("../lit/Wotzka1995_StilGrKuerzel.csv")
+stilgr <- concat.split.multiple(stilgr, c("Seidensticker"), c("."))
+
+df.m <- merge(x = df, y = stilgr[, c("Typ", "Stilgruppe", 
+                                     "Seidensticker_1", 
+                                     "Seidensticker_2", 
+                                     "Seidensticker_3", 
+                                     "Seidensticker_4")], by = "Typ")
+df.m
+```
+
+```{r}
+df.piv <- data.frame(dcast(df.m, Seidensticker_1 + Seidensticker_2 + Seidensticker_3 + Seidensticker_4 + Stilgruppe ~ Fabric, 
+                           value.var = "objID", 
+                           fun.aggregate = length))
+
+
+rownames(df.piv) <- paste(df.piv$Stilgruppe, " (Kap. ", df.piv$Seidensticker_1, ".", df.piv$Seidensticker_2, ".", df.piv$Seidensticker_3, ".", df.piv$Seidensticker_4, sep = "")
+
+#rownames(df.piv) <- df.piv$Stilgruppe
+df.piv$Stilgruppe <- NULL
+df.piv$Seidensticker_1 <- NULL
+df.piv$Seidensticker_2 <- NULL
+df.piv$Seidensticker_3 <- NULL
+df.piv$Seidensticker_4 <- NULL
+
+# %-Werte ausrechnen:
+df.pct <- round(df.piv/rowSums(df.piv)*100)
+
+df.pct$label <- paste(rownames(df.pct), ", n = ", rowSums(df.piv), ")", sep = "")
+
+# levels für Sortierung anpassen
+df.pct$label <- factor(df.pct$label, levels = df.pct$label)
+
+df.pct
+```
+
+```{r}
+df.melt <- melt(df.pct, id.vars = "label")
+
+df.melt$variable <- gsub("X", "", df.melt$variable)
+df.melt$variable <- as.integer(df.melt$variable)
+
+df.melt$label <- factor(df.melt$label, levels = df.melt$label[order(df.pct$label)])
+
+df.melt
+```
+
+```{r}
+ggplot(df.melt, aes(rev(label),
+                    value,
+                    fill = rev(factor(variable)))) + 
+  geom_bar(stat = "identity") + 
+  coord_flip() + 
+  scale_x_discrete("", labels = rev(unique(df.melt$label))) + 
+  scale_fill_manual(values = rev(c("#e41a1c", "#FF7F00", "#4DAF4A", "#377EB8", "#984EA3", "#999999", "#A65628", "#F781BF", "#FFFF33")), 
+                      name = "Fabrics", 
+                      label = rev(c(1, 2, 3, 4, 5, 6, 7, 8, 9))) + 
+  guides(fill = guide_legend(reverse=T))
+ggsave("../output/figs/4-1_Fabric_pro_Stilgruppe_pct.pdf", width = 10, height = 10)
+```
+
+

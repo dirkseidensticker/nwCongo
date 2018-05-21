@@ -1,0 +1,224 @@
+% Manuskript
+% **********
+%\documentclass[12pt, a4paper, twoside, onecolumn, BCOR=5.00mm, numbers = noenddot, headings = optiontoheadandtoc, captions = nooneline]{scrbook}	% BCOR = Bindungskorrektur; noenddot entfertn Pkt nach Kap.-Nr., nooneline: alle Bildunterschiften sind immer linksbündlig
+%\usepackage[top = 30mm, bottom = 30mm, left = 25mm, right = 25mm]{geometry}
+%\usepackage{times}	% Schriftart auf Times ändern
+% **********
+
+
+% siehe Standop/Meyer 2002 Die Form der wissenschaftlichen Arbeit. 16. Aufl. (Wiebelsheim) 121f., 158f.
+% **********
+%\documentclass[12pt, a4paper, twoside, onecolumn, BCOR=10mm, numbers = noenddot, headings = optiontoheadandtoc, captions = nooneline]{scrbook}	% BCOR = Bindungskorrektur; noenddot entfertn Pkt nach Kap.-Nr., nooneline: alle Bildunterschiften sind immer linksbündlig
+%\usepackage[width = 140mm, top = 40mm, bottom = 20mm]{geometry}
+%\usepackage{times}	% Schriftart auf Times ändern
+%\usepackage{fancyhdr}
+%\pagestyle{fancy}
+%\renewcommand{\chaptermark}[1]{\markboth{\thechapter\enspace#1}{}}
+%\renewcommand{\sectionmark}[1]{\markright{\thesection\enspace#1}}
+%\fancyhead{}
+%\fancyhead[LE]{\thepage}
+%\fancyhead[RE]{\nouppercase\leftmark}
+%\fancyhead[RO]{\thepage}
+%\fancyhead[LO]{\nouppercase\rightmark}
+%\fancyfoot{}
+%\renewcommand*\chapterpagestyle{empty}	% schaltet die Kapitelseiten auf empty
+% **********
+
+% AP-Stil
+% *******
+\documentclass[11pt, a4paper, twoside, twocolumn, numbers = noenddot, headings = optiontoheadandtoc]{scrbook}	% noenddot entfertn Pkt nach Kap.-Nr.
+\usepackage[width = 167mm, top = 20mm, bottom = 34mm]{geometry}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\fancyhead{}
+\fancyfoot{}
+\fancyfoot[LE]{\thepage\hspace{6mm}\textit{Dirk Seidensticker}}
+\fancyfoot[RO]{\textit{\nouppercase \leftmark}\hspace{6mm}\thepage}
+%\fancyfoot[CE]{\textit{Arch\"aologie des nordwestlichen Kongobeckens}}
+\renewcommand{\headrulewidth}{0pt}
+% Seiteneinstellung für plain ändern, damit auf den ersten Seiten eines Kapitels auch die gleiche Fußnote kommt:
+\fancypagestyle{plain}{%
+	\fancyhead{}
+	\fancyfoot{}
+	\fancyfoot[LE]{\thepage\hspace{6mm}\textit{Dirk Seidensticker}}
+	\fancyfoot[RO]{\textit{\nouppercase \leftmark}\hspace{6mm}\thepage}
+}
+%\usepackage[top = 22.5mm, bottom = 31.5mm, left = 25mm, right = 25mm]{geometry}
+\setlength{\columnsep}{9mm}
+\newcommand{\changefont}[3]{
+\fontfamily{#1} \fontseries{#2} \fontshape{#3} \selectfont}
+\changefont{ppl}{m}{n}	%Schriftart zu Palatino ändern
+%\usepackage{palatinox}	% Palatino Linotype
+% *******
+
+\usepackage[utf8]{inputenc}
+\usepackage[onehalfspacing]{setspace}	% Zeilenabstand auf 1,5
+\usepackage[T1]{fontenc}
+\usepackage{tipa}	% Nutzung phonetischer Zeichen
+\setkomafont{disposition}{\normalfont\bfseries}
+
+\usepackage{fontawesome}	% font awesome icons
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[ngerman]{babel}
+\usepackage{enumitem}
+\setitemize{leftmargin=*} % entfernt die Einrückung der item-Umgebung
+
+\usepackage[autostyle = true, german = guillemets]{csquotes}	% ermöglicht die Nutzung von franz. Anführungszeichen - mit \enquote{} beziehungsweise \enquote*{}
+
+\usepackage{todonotes}
+\usepackage[hidelinks]{hyperref}	% erstellt die farbigen Links im PDF und gibt die Möglichkeit URLs einzugeben
+
+\usepackage{mdwlist} % Listen ohne Zwischenabstand
+
+\setkomafont{chapterentry}{\rmfamily \bfseries}
+
+\renewcommand*{\chaptermarkformat}{}	% entfernt die Nummerierung der Kapitel aus der Kopfzeile
+\renewcommand*{\sectionmarkformat}{}	% entfernt die Nummerierung der Unterkapitel aus der Kopfzeile
+
+\renewcommand*\descriptionlabel[1]{\hspace\labelsep\normalfont #1}
+
+% Fußnoten
+% ========
+\addtokomafont{footnote}{\footnotesize}	% größe der Fußnoten
+\deffootnote{2em}{1em}{
+	\makebox[2em][l]{\thefootnotemark}}	% Einzug der Fußnoten
+\usepackage{chngcntr}
+\counterwithout{footnote}{chapter}	% Fußnotennummerierung läuft über die Kapitel hinweg
+\interfootnotelinepenalty=0	% =0 ermöglicht einfaches Umbrechen vs. =1000 verhindert den Umbruch von Fußnoten 
+
+% Abbildungen & Tabellen
+% ======================
+\usepackage{graphicx}
+%\usepackage[demo]{graphicx}	% zur schnellen Anzeige
+\usepackage{morefloats}	% mehr float-Obj können verarbeitet werden
+\usepackage[labelfont = bf]{caption}	% fette Abbildungsnummern
+\usepackage{subcaption}
+\captionsetup[subfigure]{labelfont=bf, labelsep = quad, labelformat = mysublabelfmt}	% keine Klammern um die Bezeichnung der Subfigure
+\renewcommand{\thesubfigure}{\Alph{subfigure}}	% große Buchstaben als Bezeichner
+
+\makeatletter	% erzeugt in dem \ref auf subfigures eine Ausgabe : Fig.Subfig -- bspw. (Abb. 32.A)
+\renewcommand\p@subfigure{\thefigure}
+\renewcommand\thesubfigure{.\Alph{subfigure}}
+\DeclareCaptionLabelFormat{mysublabelfmt}{\Alph{sub\@captype}}
+\makeatother
+
+% subtable
+\captionsetup[subtable]{labelfont=bf, labelsep = quad, labelformat = mysublabelfmt}	% keine Klammern um die Bezeichnung der Subfigure
+\renewcommand{\thesubtable}{\Alph{subtable}}	% große Buchstaben als Bezeichner
+
+\makeatletter	% erzeugt in dem \ref auf subfigures eine Ausgabe : Fig.Subfig -- bspw. (Abb. 32.A)
+\renewcommand\p@subtable{\thetable}
+\renewcommand\thesubtable{.\Alph{subtable}}
+\DeclareCaptionLabelFormat{mysublabelfmt}{\Alph{sub\@captype}}
+\makeatother
+
+
+
+
+\usepackage{array}	% liefert vertikale Ausrichtung der Zelleninhalte von Tabellen mit m{}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}	% linksbündige Tabellen mit P
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}	% rechtsbündige Tabellen mit R
+
+\usepackage{adjustbox}	% ermöglichst das Beschneiden von Grafiken
+
+\usepackage{longtable}
+\usepackage{supertabular}
+\usepackage{arydshln}	% gestrichelte Linien mit \hdashline & \cdashline
+\usepackage{multirow}	% http://ctan.org/pkg/multirow
+\usepackage{multicol}
+\usepackage{makecell}
+\usepackage{booktabs}	% lässt \top-, \mid- & \bottomrule in Tab zu
+
+\usepackage{chngcntr}	% setzt kontinuierliche Abbildungs- & Tabellennummerierung
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+
+\usepackage{caption}	% entfernt den : hinter Abb./Tab.-Nr.
+\captionsetup[figure]{labelsep = quad}	% Abstand zwischen Nr und Text
+\captionsetup[table]{labelsep = quad}	% Abstand zwischen Nr und Text
+
+\addto{\captionsngerman}{%
+  \renewcommand*{\contentsname}{Inhalt}
+  \renewcommand*{\listfigurename}{Abbildungen}
+  \renewcommand*{\listtablename}{Tabellen}
+  \renewcommand*{\figurename}{Abb.}
+  \renewcommand*{\tablename}{Tab.}
+}
+
+\renewcommand*{\figureformat}{\figurename~\thefigure}	% unterdrückt mögliche Sonderzeichen (Pkt.) hinter Abb.-Nr.
+\renewcommand*{\tableformat}{\tablename~\thetable}		% vertikale Zellen in Tabelle
+
+%\newcommand*\rot{\rotatebox{90}}						
+
+\graphicspath{ {images/} }	% Bilderordner
+
+\usepackage[figuresright]{rotating}	% Provides {sideways}{sidewaysfigure}{sidewaystable} environments; siehe https://en.wikibooks.org/wiki/LaTeX/Rotations
+\usepackage{afterpage}	% longtable to the top of the next page
+
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
+\usetikzlibrary{calc,
+	arrows,decorations.pathmorphing,
+	backgrounds,fit,positioning,shapes.symbols,chains}
+\usetikzlibrary{decorations.pathreplacing}
+\usepackage{smartdiagram}
+
+% Tafeln
+% ======
+% neue Umgebung definieren (http://tex.stackexchange.com/questions/6478/new-figure-environment)
+\usepackage{float}
+\floatstyle{plain}
+\newfloat{pl}{thp}{lop}
+\floatname{pl}{Tafel}
+\captionsetup[pl]{labelsep = quad}	% Abstand zwischen Nr und Text
+
+% Listen
+% ======
+% neue Umgebung definieren (http://tex.stackexchange.com/questions/6478/new-figure-environment)
+\usepackage{float}
+\floatstyle{plain}
+\newfloat{ls}{thp}{lop}
+\floatname{ls}{Liste}
+\captionsetup[ls]{labelsep = quad}	% Abstand zwischen Nr und Text
+
+
+
+% Literatur
+% =========
+
+% DAI-Paket
+% *********
+%\usepackage[style = archaeologie, backend = biber, kapitaelchen]{biblatex}	% DAI-Regeln
+% *********
+
+%\usepackage[style = authoryear-icomp, sorting = nyt, backend = biber, uniquename = false]{biblatex}	% maxcitenames = 2: nach 2 Autoren bereits u.a.; 
+%\bibliography{Lit.bib}
+%%\addbibresource{Lit.bib}
+%\renewcommand*{\mkbibnamefamily}[1]{\textsc{#1}}	% Autorennamen in Kapitälchen
+%%\renewcommand*{\mkbibnamelast}[1]{\textsc{#1}}	% bei älterem biblatex (<=3.3)
+%\renewcommand*{\bibfont}{\footnotesize}	% kleiner Text im Literaturverzeichnis
+%
+%\DeclareFieldFormat{pages}{#1}				% entfernt 'S.' in Kurzzitaten & Literaturliste
+%\DefineBibliographyStrings{german}{%
+%   page = {{}{}},
+%   pages = {{}{}},
+%   % andothers = {{et\,al\adddot}},
+%}
+
+\input{chpt/0_CitationAP}
+
+\setlength{\columnsep}{8mm}	% Plastz zwischen den Spalten
+
+% \input{header.tex}
+
+% Text mit Kreis umschließen
+% ==========================
+\usetikzlibrary{arrows}
+\usetikzlibrary{shapes}
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape = circle, draw, inner sep = 2pt] (char) {#1};}}
+
+% =================================================================

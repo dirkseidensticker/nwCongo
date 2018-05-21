@@ -1,0 +1,148 @@
+\usepackage[style = authoryear-icomp, 
+ sorting = nyt, 
+ backend = biber, 
+ uniquename = false, 
+ language = auto, 
+ mincitenames = 1,
+ maxcitenames = 2, % nach 2 Autoren bereits u.a.
+ maxbibnames = 100, 
+ giveninits = true, % kürzt die Vornamen ab
+ uniquename = false, 
+ dashed = true, 
+ ibidtracker = true,
+ mergedate = false]{biblatex}
+\bibliography{bib/bib.bib}
+%\addbibresource{Lit.bib}
+\renewcommand*{\mkbibnamefamily}[1]{\textsc{#1}}	% Autorennamen in Kapitälchen
+%\renewcommand*{\mkbibnamelast}[1]{\textsc{#1}}	% bei älterem biblatex (<=3.3)
+\renewcommand*{\bibfont}{\footnotesize}	% kleiner Text im Literaturverzeichnis
+
+%\renewcommand*{\postnotedelim}{\ifciteibid{\addcolon\space}{\space}}
+
+\renewcommand*{\postnotedelim}{\addcolon\space}	% Doppelpunkt anstatt Komma vor Seitenzahl
+
+\renewcommand*{\finalnamedelim}{\addspace\&\space} % &-Zeichen zwischen Autoren
+
+\DeclareFieldFormat{pages}{#1}	% entfernt 'S.' in Kurzzitaten & Literaturliste
+\DefineBibliographyStrings{german}{%
+	page = {{}{}},
+	pages = {{}{}},
+	% andothers = {{et\,al\adddot}},
+}
+
+% Bibliography
+
+\AtEveryBibitem{
+ \clearlist{publisher}
+ %\clearfield{month}
+ \clearfield{issn}
+ \clearfield{isbn}
+ \clearfield{url}
+ \clearfield{doi}
+}  
+
+\renewcommand{\labelnamepunct}{\quad}         % Geviertleerzeichen zwischen Autor (2006) und Titel im LV
+%\renewcommand{\bibnamedash}{--\hspace{7mm}}      % (Halbgeviert) als Ersatz für wiederkehrende Autoren oder Herausgeber in der Bibliografie verwendet wird
+\renewcommand{\bibpagespunct}{\addcolon\addspace} % Seitenzahlen abtrennen mit : 
+\DeclareFieldFormat{title}{\normalfont{#1}}    % Titel in normaler Schrift im LV
+\DeclareFieldFormat[article,incollection]{title}{#1}      % Titel in Journals und Sammelbänden nicht in "Hochkomma" im LV
+%\DeclareFieldFormat{myjournaltitle}{#1} % Zeitschriftentitel kursiv (funktioniert nur ohne \emph{} Auszeichnung!???)
+\DeclareFieldFormat{series}{\emph{#1}} % Reihentitel kursiv
+\DeclareFieldFormat{issuetitle}{#1} % Ausgabetitel nicht kursiv
+\DeclareFieldFormat{maintitle}{#1} % Sammelbandtitel nicht kursiv
+\DeclareFieldFormat{booktitle}{#1} % Sammelbandtitel nicht kursiv
+
+
+\setlength\bibitemsep{1.8mm}   % Abstand zwischen Eintr�gen im Literaturvereichnis (1.8mm) im LV
+\setlength\bibhang{9mm}
+\renewcommand{\bibnamedash}{--\hspace{7mm}}
+
+% Kein In: bei Artikeln 
+\renewbibmacro{in:}{   
+\ifentrytype{article}{}{\printtext{\bibstring{in}\intitlepunct}}}
+
+% Volume gefolgt von Nummer in Klammern  
+\DeclareFieldFormat[article]{number}{\mkbibparens{#1}}
+\renewbibmacro*{volume+number+eid}{%
+	\printfield{volume}%
+	\printfield{number}}     
+
+%% Bei Artikeln die zweite Jahreszahl nicht in Klammer setzen
+\renewbibmacro*{issue+date}{%
+	\setunit{\addcomma\space}% NEW
+	%  \printtext[parens]{% DELETED
+	\iffieldundef{issue}
+	{\usebibmacro{date}}
+	{\printfield{issue}%
+		\setunit*{\addspace}%
+		%       \usebibmacro{date}}}% DELETED
+		\usebibmacro{date}}% NEW
+	\newunit}
+
+%%%  Inbook, Incollection, Inproceedings
+%  Editor nach dem In: und vor dem Titel
+\renewbibmacro*{in:}{
+	\ifentrytype{incollection}{%
+		\DeclareNameAlias{editor}{first-last}
+		\printtext{In: }
+		\ifnameundef{editor}
+		{}
+		{\printnames{editor}%
+			\addspace 
+			\usebibmacro{editorstrg} % \mkbibparens{\usebibmacro{editorstrg}}, in diesem Falle keine Klammern nach Autor, ed. (2016)
+			%\mkbibparens{\usebibmacro{editorstrg}}
+			\setunit{\addcomma\addspace}% 
+		}%
+		\usebibmacro{maintitle+booktitle}
+		\clearfield{maintitle}    %% Folgende Eintr�ge sollen nun nicht noch einmal ausgegeben werden 
+		\clearfield{booktitle}
+		\clearfield{volume}
+		\clearfield{part}
+		\clearname{editor}
+	}
+	{}%
+}
+
+%  ed./eds. immer in Klammern (auch nach Erstautor!)
+\DeclareFieldFormat{editortype}{\mkbibparens{#1}}
+
+% kein Komma vor ed. (z.B. wenn in 1. Zeile nach Erstautor)
+\usepackage{xpatch}
+\xpatchbibmacro{bbx:editor}
+{\addcomma\space}{\addspace}{}{}    
+
+%%%%%  Inbook, Incollection, Inproceedings, book
+%% Ort und Jahr in Klammern, ohne Komma (Köln 2017)
+\renewbibmacro*{publisher+location+date}{%
+	%\printtext[parens]{%
+	{%
+		%\printlist{publisher}%   % Verlag wird nicht ausgegeben
+		%\iflistundef{location}
+		%{\setunit*{\addcomma\space}}
+		%{\setunit*{\addcolon\space}}%
+		\printlist{location}%
+		\setunit*{\space}%
+		\usebibmacro{date}%
+	}\newunit%
+}
+
+%% Kein Punkt nach Titel bei book
+%\xpatchbibdriver{book}
+%{\newunit\newblock\usebibmacro{publisher+location+date}}{%
+%	\setunit{\addspace}\newblock%
+%	\usebibmacro{publisher+location+date}%
+%}{}{}      
+%
+%% Kein Punkt nach Titel bei incollection 
+%\xpatchbibdriver{incollection}
+%{\newunit\newblock\usebibmacro{publisher+location+date}}{%
+%	\setunit{\addspace}\newblock%
+%	\usebibmacro{publisher+location+date}%
+%}{}{}      
+%
+%% Kein Punkt nach Titel bei inbook 
+%\xpatchbibdriver{inbook}
+%{\newunit\newblock\usebibmacro{publisher+location+date}}{%
+%	\setunit{\addspace}\newblock%
+%	\usebibmacro{publisher+location+date}%
+%}{}{}  
