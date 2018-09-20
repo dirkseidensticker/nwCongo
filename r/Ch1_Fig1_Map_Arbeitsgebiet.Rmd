@@ -4,19 +4,7 @@ output: html_notebook
 ---
 
 ```{r}
-library(ggplot2)
-library(ggrepel)
-library(ggsn)
-library(ggthemes)
-library(plyr)
-library(raster)
-library(rgdal)
-library(RSQLite)
-library(sp)
-library(viridis)
-
-drv <- dbDriver("SQLite")
-con <- dbConnect(drv, "../data/CongoDB.sqlite")
+source("setup.r")
 ```
 
 # Geodaten

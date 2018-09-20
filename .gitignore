@@ -1,3 +1,6 @@
+## exclude main.pdf !!!
+main.pdf
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof

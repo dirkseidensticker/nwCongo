@@ -6,21 +6,7 @@ output: html_notebook
 Für die Kreisdiagramme siehe: https://cran.r-project.org/web/packages/scatterpie/vignettes/scatterpie.html
 
 ```{r}
-library(ggplot2)
-library(ggrepel)
-library(ggsn)
-library(ggthemes)
-library(plyr)
-library(raster)
-library(reshape2)
-library(rgdal)
-library(RSQLite)
-library(scatterpie)
-library(sp)
-library(viridis)
-
-drv <- dbDriver("SQLite")
-con <- dbConnect(drv, "../data/CongoDB.sqlite")
+source("setup.r")
 ```
 
 # Geodaten
