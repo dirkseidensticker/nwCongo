@@ -1,0 +1,192 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+source("setup.r")
+library("RColorBrewer")
+```
+
+## set up geodata
+
+```{r}
+epsg <- 4326
+crs <- paste("+init=epsg:",epsg,"", sep="")
+
+cnt <- spTransform(readOGR(dsn = "../data/vector", layer="10m_admin_0_countries", verbose = FALSE), CRS( crs))
+rvr <- spTransform(readOGR(dsn = "../data/vector", layer="10m_rivers_lake_centerlines", verbose = FALSE), CRS(crs))
+
+# raster layer with rainforest cover from bioval.jrc.ec.europa.eu
+dpath <- "../data/raster/bioval.jrc.ec.europa.eu/hdr.adf"
+x <- new("GDALReadOnlyDataset", dpath)
+getDriver(x)
+getDriverLongName(getDriver(x))
+
+hdr <- asSGDF_GROD(x)
+hdr <- raster(hdr)
+
+# extent format (xmin,xmax,ymin,ymax)
+e  <- extent(6, 35, -8.5, 8.5) 
+rfs <- crop(hdr, e) 
+
+# convert the raster to points for plotting
+rfs.p <- rasterToPoints(rfs)
+
+# Make the points a dataframe for ggplot & subset rainforest bands 1-7
+rfs.d <- data.frame(rfs.p)
+rfs.d <- subset(rfs.d, band1 >= 1 & band1 <= 7)
+
+# Swamp forest
+rfs.bd5 <- data.frame(rfs.p)
+rfs.bd5 <- subset(rfs.bd5, band1 == 5)
+
+# swamp buchland and grassland
+rfs.bd17 <- data.frame(rfs.p)
+rfs.bd17 <- subset(rfs.bd17, band1 == 17)
+
+# water
+rfs.bd26 <- data.frame(rfs.p)
+rfs.bd26 <- subset(rfs.bd26, band1 == 26)
+
+# create the breaks- and label vectors; see https://stackoverflow.com/a/33302968
+ewbrks <- seq(-8.5,8.5,5)
+nsbrks <- seq(6,31,5)
+ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste(x, "°E"), ifelse(x > 0, paste(x, "°W"),x))))
+nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(x, "°S"), ifelse(x > 0, paste(x, "°N"),x))))
+
+# Create basemap
+g.b <- ggplot() + 
+  geom_polygon(data = cnt, 
+              aes(long, lat, group = group, fill=hole),
+              fill  = "#ffebbe") + 
+  geom_raster(data = rfs.d, aes(y = y, x = x), fill = '#00734d') + 
+  geom_raster(data = rfs.bd5, aes(y = y, x = x), fill = '#2b916a') + 
+  geom_raster(data = subset(rfs.bd17, x < 20), aes(y = y, x = x), fill = '#54eeb7') + 
+  geom_raster(data = rfs.bd26, aes(y = y, x = x), fill = '#44afe3') + 
+  geom_path(data = rvr, 
+            aes(long, lat, group = group, fill=NULL),
+            size = 0.5,   
+            colour  = "#44afe3") + 
+  geom_polygon(data = cnt, 
+              aes(long, lat, group = group),
+              size = 0.2,
+              fill  = NA,  
+              color = "#808080") + 
+  scale_x_continuous("", 
+                     breaks = ewbrks, 
+                     labels = ewlbls) +
+  scale_y_continuous("", 
+                     breaks = nsbrks, 
+                     labels = nslbls) +
+  coord_equal(xlim=c(7.5, 31),
+              ylim=c(-7.5,7.5)) + 
+  theme_few() + 
+  theme(panel.background = element_rect(fill = "#dff1f9"),
+        plot.background = element_rect(color = NA, 
+                                       fill = NA)
+  )
+
+# the minimap:
+csl <- spTransform(readOGR(dsn = "../data/vector", layer="ne_110m_land", verbose = FALSE), CRS( crs))
+
+g2 <- ggplotGrob(
+  ggplot() + 
+  geom_path(data = csl, 
+               aes(long, lat, group = group),
+               size = 0.2, 
+               fill = 'white', color = "black") + 
+  geom_rect(mapping = aes(xmin = 6, xmax = 32, 
+                          ymin = -8, ymax = 8), 
+            alpha = 0.5, fill ="black", size = 0.5) + 
+  coord_equal() + 
+  scale_x_continuous(limits = c(-20, 55), expand = c(0, 0)) + 
+  scale_y_continuous(limits = c(-40, 42), expand = c(0, 0)) + 
+  theme_map() + 
+  theme(panel.background = element_rect(fill = 'white'), 
+        panel.border = element_rect(colour  = 'black', fill = NA, size = 1))
+)
+```
+
+```{r}
+df_sitesDS = dbGetQuery(con, "
+SELECT  t_Ort.ort_name, 
+  t_Ort.x_long, 
+  t_Ort.y_lat 
+FROM t_Ort 
+WHERE (((t_Ort.y_lat) <> '') 
+  AND ((t_Ort.ort_lit) Like '%DS%'))")
+
+xmin <- min(df_sitesDS$x_long)-0.1
+xmax <- max(df_sitesDS$x_long)+0.1
+ymin <- min(df_sitesDS$y_lat)-0.1
+ymax <- max(df_sitesDS$y_lat)+0.1
+```
+
+```{r}
+df = dbGetQuery(con, "
+SELECT t_Ort.ort_name, 
+  t_Ort.y_lat, 
+  t_Ort.x_long, 
+  t_Ort.ort_notiz 
+FROM t_Ort 
+WHERE (((t_Ort.ort_beschr) Like '%Pollendaten%'))")
+head(df)
+```
+
+```{r}
+# Datensätze aus Literatur (Sangen 2009)
+Sangen2009Abb16 <- read.csv("../bib/Sangen2009/43_Abb16.csv", dec=",", encoding = 'UTF-8')
+Sangen2009Abb17A <- read.csv("../bib/Sangen2009/46_Abb17A.csv", dec=",", encoding = 'UTF-8')
+Sangen2009Abb17B <- read.csv("../bib/Sangen2009/46_Abb17B.csv", dec=",", encoding = 'UTF-8')
+```
+
+```{r}
+# Daten aus der DB auf Tabellennamen von Mark abändern
+colnames(df) <- c("NAME", "y_lat", "x_long", "kaBP")
+     
+# die drei Datensätze von Mark zusammen bringen
+Sangen2009 <- rbind(Sangen2009Abb16, Sangen2009Abb17A, Sangen2009Abb17B)
+library(gtools)
+data <- smartbind(Sangen2009, df)
+
+data <- subset(data, x_long > 7 & x_long < 32 & y_lat > -7.5 & y_lat < 7.5)
+
+data$kaBP <- as.numeric(data$kaBP)
+
+max <- max(data$kaBP, na.rm = TRUE)
+min <- min(data$kaBP, na.rm = TRUE)
+
+# die NA's aus der DB austauschen
+library(car)
+data$TYP <- car::recode(data$TYP, 'c(NA) = "(?)"')
+     
+myPalette <- colorRampPalette(rev(brewer.pal(11, "Spectral")))
+sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(min, max), name = "Datierung (kaBP)")
+```
+
+```{r}
+g1 <- g.b + 
+  geom_rect(aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill=TRUE), color="red", fill = NA) + 
+  geom_label_repel(aes(x = x_long, y = y_lat, label = NAME), data = data, box.padding = 0.5) + 
+  geom_point(aes(x = x_long, y = y_lat, fill = kaBP, shape = factor(TYP)), data = data, size = 5) + 
+  sc + 
+  scale_shape_manual(values = c(23,24,25), name = "Typ") +
+  theme(legend.position=c(0.275, 0.095), 
+        legend.direction = "horizontal",
+        legend.background = element_blank(),
+        legend.box.background = element_rect(fill = "white", colour = "black", size = 0.6),
+        axis.ticks = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+  
+g3 <- g1 + 
+  annotation_custom(grob = g2, 
+                    xmin = 6.5, xmax = 10,
+                    ymin = -8, ymax = -4)
+g3
+#ggsave(g3, filename = "../fig/Ch1_Fig2_PalaoUmwelt.pdf", width = 15.5, height = 10)
+ggsave(g3, filename = "../fig/Ch1_Fig2_PalaoUmwelt.jpg", width = 15.5, height = 10)
+```

@@ -1,0 +1,87 @@
+#############################
+# 4.2.1 Inneres Kongobecken #
+#############################
+
+library(ca)
+library(ggplot2)
+library(RSQLite)
+library(vegan)
+
+source("myfunctions.R")
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+
+# Pivot-Tabelle in Python erstellt
+
+# Gefäß-Formen
+# ------------
+
+# Orig Wotzka:
+HPWorig <- read.csv("../lit/Wotzka1995_GefFormen_Pivot.csv", row.names = 1)
+HPWorig[is.na(HPWorig)] <- 0
+
+# Wotzka Neu:
+# auf eigene Gef-Typen gemappt:
+HPWneu <- read.csv("../lit/Wotzka1995_GefFormen_Pivot_mapDS.csv", row.names = 1)
+HPWneu[is.na(HPWneu)] <- 0
+
+# Seidesticker:
+
+DS <- read.csv("../lit/Wotzka1995_GefFormen_Pivot_Seidensticker.csv", row.names = 1)
+DS[is.na(DS)] <- 0
+
+# DS+HPWneu
+DS.HPWneu <- read.csv("../lit/Wotzka1995_GefFormen_Pivot_ALL.csv", row.names = 1)
+DS.HPWneu[is.na(DS.HPWneu)] <- 0
+
+
+pdf("../output/figs/4-2-1_GefFormen_CA.pdf", width=12, height=12, useDingbats=FALSE)
+
+par(mfrow = c(2, 2))
+plot(ca(HPWorig))
+title(sub = "Wotzka 1995 Orig")
+
+plot(ca(HPWneu))
+title(sub = "Wotzka 1995 Neu")
+
+plot(ca(DS))
+title(sub = "Seidesticker")
+
+plot(ca(DS.HPWneu))
+title(sub = "Seidensticker + Wotzka")
+
+#title("CA aus Verzierungselmenten und Stilgruppen", line = -2, outer = TRUE)
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+# Bodenformen
+# -----------
+df <- read.csv("../lit/Wotzka1995_StilGr-Bodentypen.csv", row.names = 1)
+df <- subset(df, select = -c(Wotzka.1995)) # Spalte mit der Quellenangabe raus
+df <- df[, colSums(is.na(df)) != nrow(df)] # nicht belegte Bodenformen raus
+
+
+# CA machen
+
+library(CAseriation)
+df[is.na(df)] <- 0
+
+check.ca.plot(df,1,2) 
+
+sort.table(df,1)
+
+plot.clusters.rows(df,1,2)
+
+plot.clusters.cols(df,1,2)
+
+evaluate(df,1,2, which='R') 

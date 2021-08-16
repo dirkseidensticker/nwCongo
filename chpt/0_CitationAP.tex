@@ -1,13 +1,13 @@
 \usepackage[style = authoryear-icomp, 
  sorting = nyt, 
  backend = biber, 
- uniquename = false, 
+ uniquename = false,
+ uniquelist = false,
  language = auto, 
  mincitenames = 1,
  maxcitenames = 2, % nach 2 Autoren bereits u.a.
  maxbibnames = 100, 
  giveninits = true, % kürzt die Vornamen ab
- uniquename = false, 
  dashed = true, 
  ibidtracker = true,
  mergedate = false]{biblatex}
@@ -17,9 +17,8 @@
 %\renewcommand*{\mkbibnamelast}[1]{\textsc{#1}}	% bei älterem biblatex (<=3.3)
 \renewcommand*{\bibfont}{\footnotesize}	% kleiner Text im Literaturverzeichnis
 
-%\renewcommand*{\postnotedelim}{\ifciteibid{\addcolon\space}{\space}}
-
 \renewcommand*{\postnotedelim}{\addcolon\space}	% Doppelpunkt anstatt Komma vor Seitenzahl
+%\renewcommand*{\postnotedelim}{\ifciteibid{\addcolon\space}{\space}}
 
 \renewcommand*{\finalnamedelim}{\addspace\&\space} % &-Zeichen zwischen Autoren
 
@@ -53,7 +52,7 @@
 \DeclareFieldFormat{booktitle}{#1} % Sammelbandtitel nicht kursiv
 
 
-\setlength\bibitemsep{1.8mm}   % Abstand zwischen Eintr�gen im Literaturvereichnis (1.8mm) im LV
+\setlength\bibitemsep{1.8mm}   % Abstand zwischen Einträgen im Literaturvereichnis (1.8mm) im LV
 \setlength\bibhang{9mm}
 \renewcommand{\bibnamedash}{--\hspace{7mm}}
 

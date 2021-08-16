@@ -1,0 +1,65 @@
+NAME,LONG,x_long,LAT,y_lat,kaBP,LIT,TYP
+Viktoria See,32°50'E,"32,833333",1°00'N,1,"13,8","Kendall 1969; Stager et al. 1997, 2003",lakustrin/palustrin
+Pilkington Park,33°20'E,"33,3333333",0°18'N,"0,3",18,Kendall 1969; Talbot/Livingstone 1989,lakustrin/palustrin
+Tanganyika See,29°05'E,"29,083333",6°14'S,"-6,233333","13,8",Tiercelin et al. 1988; Gasse et al. 1989; Vincens 1989,lakustrin/palustrin
+Kuruyanga Sumpf,29°34'E,"29,566667",3°28'S,"-3,466667","32,5",Jolly/Bonnefille 1991; Bonnefille et al. 1991,lakustrin/palustrin
+Kashiru Sumpf,29°34'E,"29,566667",3°28'S,"-3,466667",31,Bonnefille/Riolet 1988,lakustrin/palustrin
+Ijenda Sumpf,29°33'E,"29,55",3°29'S,"-3,4833333",22,Roche/Bikwemu 1989,lakustrin/palustrin
+Rusaka Sumpf,29°37'E,"29,616666",3°26'S,"-3,433333",34,Bonnefille et al. 1995,lakustrin/palustrin
+Albert See,31°70'E,"31,116667",1°50'N,"1,833333","29,9",Beuning et al. 1997; Sowunmi 1991,lakustrin/palustrin
+Malawi See,34°30'E,"34,5",12°30'S,"-12,5",24,Finney/Johnson 1991; Filippi/Talbot 2005,lakustrin/palustrin
+Masoko Maar,33°45'E,"33,75",9°20'S,"-9,333333",45,Vinvens et al. 2003; Garcin et al. 2007,lakustrin/palustrin
+Rukwa See,33°E,33,8°S,-8,23,Barker et al. 2002; Voncens et al. 2005,lakustrin/palustrin
+Kivu See,28°56'E,"28,933333",1°51'S,"-1,85",15,Street/Grove 1975; Haberyan/Heckey 1987,lakustrin/palustrin
+Ahakagyezi Sumpf,29°32'E,"29,533333",1°42'N,"1,7",24,Hamilton et al. 1986; Taylor/Marchant 1996,lakustrin/palustrin
+Muchoya Sumpf,32°29'E,"32,533333",1°10'S,"-1,166667",40,Morrison 1968; Hamilton 1982; Taylor 1990,lakustrin/palustrin
+Mahoma See,29°58'E,"29,966667",0°21'N,"0,35","14,7",Livingstone 1967; Hamilton 1972,lakustrin/palustrin
+Mubwindi Sumpf,29°45'E,"29,75",1°04'N,"1,066667",43,Marchant et al. 1997,lakustrin/palustrin
+Simbi See,34°37'E,"34,6166667",0°22'N,"0,366667","4,3",Mworia-Maitima 1997,lakustrin/palustrin
+Naivasha See,36°20'E,"36,333333",0°45'S,"-0,75",21,Mworia-Maitima 1997,lakustrin/palustrin
+Nakuru See,36°04'E,"36,066667",0°15'S,"-0,25","29,3",Richardson/Richardson 1972,lakustrin/palustrin
+Sacrred See,37°19'E,"37,316667",0°10'S,"-0,166667","33,3",Coetzee 1967; Olago 1995,lakustrin/palustrin
+Rutundu See,37°18'E,"37,3",0°02'S,"-0,033333",18,Coetzee 1967,lakustrin/palustrin
+Small Hall Tarn,37°21'E,"37,35",0°09'S,"-0,15","14,7",Barker et al. 2001,lakustrin/palustrin
+Simba Tarn,37°19'E,"37,316667",0°09'S,"-0,15",10,Barker et al. 2001,lakustrin/palustrin
+Bogoria See,36°05'E,"36,083333",0°17'N,"0,283333",20,Tiercelin et al. 1981; Tiercelin/Vincens 1987,lakustrin/palustrin
+Loboi Sumpf,36°09'E,"36,15",0°22'N,"0,366667","4,6",Ashley et al. 2004; Driese et al. 2004,lakustrin/palustrin
+Kesumbo Sumpf,36°09'E,"36,15",0°22'N,"0,366667","4,6",Ashley et al. 2004; Driese et al. 2004,lakustrin/palustrin
+Laboot Sumpf,34°37'E,"34,616667",0°57'N,"0,95",28,"Hamilton 1982, 1987",lakustrin/palustrin
+Kaisungor Sumpf,35°15'E,"35,25",1°12'N,"1,2","27,7",Coetzee 1967,lakustrin/palustrin
+Kimilili See,34°03'E,"34,05",1°06'N,"1,1","24,7",Hamilton 1987; Barker et al. 1999,lakustrin/palustrin
+Magadi See,36°18'E,"36,3",1°50'S,"-1,5","12,4",Roberts et al. 1993,lakustrin/palustrin
+Edward See,29°35'E,"29,583333",0°25'S,"-0,416667",23,Russel et al. 2003; Beuning/Russel 2004,lakustrin/palustrin
+Chesi See,29°45'E,"29,75",9°05'S,"-9,083333",40,Stager 1988,lakustrin/palustrin
+Kamiranzowo Sumpf,29°18'E,"29,3",2°25'S,"-2,416667",38,Hamilton 1987; Roche/Bikwemu 1989,lakustrin/palustrin
+Turkana See,36°01'E,"36,016667",3°03'N,"3,05","4,3",Rochetts/Johnson 1996,lakustrin/palustrin
+Abiyata See,38°40'E,"38,666667",7°28'N,"7,466667","13,4",Chali�/Gasse 2002,lakustrin/palustrin
+Ziway-Shalla,38°58'E,"38,966667",7°01'N,"7,016667",8,Gillespie et al. 1983,lakustrin/palustrin
+Langeno See,38°50'E,"38,833333",7°28'N,"7,466667","2,4",Mohammed/Bonnefille 1991,lakustrin/palustrin
+Tilo Krater-See,38°03'E,"38,5",7°04'N,"7,066667",22,Gasse et al. 1980; Lamb et al. 2000,lakustrin/palustrin
+Abhé See,42°E,42,11°15'N,"11,25",20,Gasse 1977; Gasse/Street 1978,lakustrin/palustrin
+Ngamakala See,15°23'E,"15,383333",4°04'S,"-4,066667",24,Elenga 1992; Elenga et al. 1994,lakustrin/palustrin
+Coraf,11°E,11,4°S,-4,6,Schwartz et al. 1991; Elenga et al. 1992,lakustrin/palustrin
+Songolo,11°51'E,"11,85",4°45'S,"-4,75","4,3",Elenga et al. 1992; Vincens et al. 1999,lakustrin/palustrin
+Kitina See,11°59'E,"11,983333",4°15'S,"-4,25","5,4",Elenga et al. 1996,lakustrin/palustrin
+Sinnda See,12°48'E,"12,8",3°50'S,"-3,833333","5,2",Vincens et al. 1994; 1998; 1999,lakustrin/palustrin
+Bois de Bilako,15°21'E,"15,35",3°31'S,"-3,516667","10,8",Elenga et al. 1991,lakustrin/palustrin
+Kamalété See,11°46'E,"11,766667",0°43'S,"-0,716667","1,3",Maley et al. 2001; Ngomanda et al. 2005,lakustrin/palustrin
+Nguène See,10°28'E,"10,466667",0°12'S,"-0,2","4,1",Ngomanda 2005,lakustrin/palustrin
+Maridor See,9°28'E,"9,466667",0°10'S,"-0,016667","3,8",Ngomanda 2005,lakustrin/palustrin
+Ossa See,9°36'E,"9,6",3°50'N,"3,833333","8,2",Reynaud-Farrera et al. 1996; Wirrmann et al. 2001,lakustrin/palustrin
+Barimbi Mbo See,9°24'E,"9,4",4°39'N,"4,65",28,Giresse et al. 1991; Maley/Brenac 1998,lakustrin/palustrin
+Bambili See,10°15'E,"10,25",5°58'N,"5,966667",24,Stager/Anfang-Sutter 1999,lakustrin/palustrin
+Njupi See,10°19'E,"10,316667",6°27'N,"6,45","3,4",Zogning et al. 1997,lakustrin/palustrin
+Assom See,12°59'E,"12,983333",6°38'N,"6,633333","4,5",Ngos III et al. 2003,lakustrin/palustrin
+Ofuabo,6°26'E,"6,433333",4°33'N,"4,55",35,Sowumni 1981,lakustrin/palustrin
+Bal See,10°56'E,"10,933333",13°18'N,"13,3","10,8",Salzmann 1996; Salzmann/Waller 1998,lakustrin/palustrin
+Kajemarum Oase,11°01'E,"11,016667",13°18'N,"13,3","9,6",Salzmann 1996; Salzmann/Waller 1998,lakustrin/palustrin
+Kaigama Oase,11°34'E,"11,566667",13°15'N,"13,25","9,5",Salzmann 1996; Salzmann/Waller 1998,lakustrin/palustrin
+Kuluwu Oase,11°33'E,"11,55",13°13'N,"13,216667","9,9",Salzmann 1996; Salzmann/Waller 1998,lakustrin/palustrin
+Tilla See,12°08'E,"12,133333",10°23'N,"10,383333","25,3",Salzmann et al. 2002,lakustrin/palustrin
+Tschad-See,13°44'E,"13,733333",16°30'N,"16,5",18,Maley 1981; Adams/Tezlaff 1986,lakustrin/palustrin
+Sélé See,2°26'E,"2,433333",7°09'N,"7,15","8,8",Salzmann/Hoelzmann 2005,lakustrin/palustrin
+Mare d'Oursi,0°30'W,"-0,5",14°38'N,"14,63333","8,2",Balouche/Neumann 1995,lakustrin/palustrin
+Bosumtwi See,1°25'W,"-1,416667",6°30'N,"6,5",28,Talbot et al. 1984; Maley 1987; 1991,lakustrin/palustrin
+Walikale,27°48'E,"27,8",1°16'S,"-1,266667",18,Runge/Runge 1995,lakustrin/palustrin

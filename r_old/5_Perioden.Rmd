@@ -1,0 +1,267 @@
+---
+title: "5 Perioden"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(RSQLite)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+## nwCongo
+```{r}
+pts.ds = dbGetQuery(con, "SELECT
+           t_Obj.objID,
+           t_Ort.ort_name,
+           t_Obj.Typ
+       FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID)
+         INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+       WHERE (((t_Obj.Typ) != '')
+         AND ((t_Ort.ort_lit) Like '%DS%'))")
+
+# evtl. alle Obj und die immer die erste Typ-Zuweisung nehmen
+
+# alle fragl. Typen abschneiden:
+pts.ds$Typ <- substring(pts.ds$Typ, 1, 3)
+
+pts.ds.unq <- unique(pts.ds[c("ort_name", "Typ")])
+pts.ds.unq
+```
+
+## Wotzka 1995
+```{r}
+#pts.hpw <- read.csv("../data/base/Wotzka1995_Sequenz.csv", dec=",")
+pts.hpw <- read.csv("../lit/Wotzka1995_Sequenz.csv", dec=",")
+rownames(pts.hpw) <- paste(pts.hpw$Nr, pts.hpw$Name)
+
+# Liste der Stilgruppen und Periodenzuweisung
+typ <- read.csv("../lit/Wotzka1995_StilGrKuerzel.csv")
+
+pts.hpw.sel <- pts.hpw[, 10:44]
+
+
+pts.hpw.sel <- pts.hpw.sel[ , -which(names(pts.hpw.sel) %in% c("Ubangi.Ngiri..Import."))]
+
+
+#pts.hpw.typ <- as.data.frame(colnames(pts.hpw.sel))
+#colnames(pts.hpw.typ) <- c("Stilgruppe")
+
+#typ.hpw <- typ[,c("Typ", "Stilgruppe")]
+#typ.hpw.mrg <- merge(x = pts.hpw.typ, y = typ.hpw, by = "Stilgruppe", sort=F)
+
+# Spaltennamen austauschen
+
+#colnames(pts.hpw.sel) <- merge(x = as.data.frame(colnames(pts.hpw.sel)), 
+#      y = typ.hpw.mrg, 
+#      by.x = "colnames(pts.hpw.sel)",
+#      by.y = "Stilgruppe", 
+#      all.x = T, 
+#      sort=F)$Typ
+
+#colnames(pts.hpw.sel) <- typ.hpw.mrg$Typ
+# >> haben nicht die gleiche REIHENFOLGE!!!
+
+pts.hpw.sel[pts.hpw.sel == ""] <- NA
+
+rownames(pts.hpw.sel) -> pts.hpw.sel$Typ
+
+pts.hpw.sel.lst <- melt(pts.hpw.sel, id.vars = "Typ", na.rm = T)
+
+pts.hpw.sel.lst <- pts.hpw.sel.lst[,1:2]
+colnames(pts.hpw.sel.lst) <- c("ort_name", "Typ")
+pts.hpw.sel.lst
+```
+
+## Livingstone Smith 2017
+
+```{r}
+pts.ali <- read.csv("../lit/ZeitscheibenSonst.csv", dec=",")
+rownames(pts.ali) <- pts.ali$SITE
+
+pts.ali.sel <- pts.ali[, 5:9]
+
+rownames(pts.ali.sel) -> pts.ali.sel$Typ
+
+pts.ali.sel.lst <- melt(pts.ali.sel, id.vars = "Typ", na.rm = T)
+
+pts.ali.sel.lst <- pts.ali.sel.lst[,1:2]
+colnames(pts.ali.sel.lst) <- c("ort_name", "Typ")
+
+
+pts.ali.sel.lst$Typ <- gsub("EarlyPotteryPhase", "YNG", pts.ali.sel.lst$Typ)
+pts.ali.sel.lst$Typ <- gsub("MiddlePotteryPhase", "MOK", pts.ali.sel.lst$Typ)
+pts.ali.sel.lst$Typ <- gsub("Ilambi_LatePotteryPhase", "ILA", pts.ali.sel.lst$Typ)
+pts.ali.sel.lst$Typ <- gsub("Yaekela_LatePotteryPhase", "NKB", pts.ali.sel.lst$Typ)
+
+pts.ali.sel.lst
+```
+
+
+alleListen zusammenführen
+```{r}
+pts.pvt <- rbind(pts.ds.unq, pts.hpw.sel.lst, pts.ali.sel.lst)
+
+pts.pvt <- dcast(pts.pvt, ort_name ~ Typ, 
+                 value.var = "ort_name",
+                 fun.aggregate = length)
+
+rownames(pts.pvt) <- pts.pvt$ort_name
+pts.pvt$ort_name <- NULL
+
+pts.pvt.sum <- as.data.frame(colSums(pts.pvt))
+rownames(pts.pvt.sum) -> pts.pvt.sum$Typ
+
+# Auswahl Spalten mit Perioden
+typ.sel <- typ[, c("Typ", "EIA_I", "EIA_II", "EIA_III", "MIA", "LIA_I", "LIA_II", "LIA_III")]
+
+#rownames(typ.sel) <- typ.sel$Typ
+#typ.sel$Typ <- NULL
+typ.sel[typ.sel == ""] <- NA
+
+typ.sel.lst <- melt(typ.sel, id.vars = "Typ", na.rm = T)
+#d.long$value <- as.numeric(d.long$value)
+
+pts.typ <- merge(x = typ.sel.lst, y = pts.pvt.sum, by = "Typ")
+colnames(pts.typ)[4] <- "nbr"
+
+clr <- typ[,c("Typ", "Farbe")]
+clr$clr <- paste("#", clr$Farbe, sep = "")
+
+pts.typ <- merge(x = pts.typ, y = clr, by = "Typ")
+pts.typ
+```
+
+```{r}
+ggplot(pts.typ, aes(x = variable, y = nbr, fill = Typ)) + 
+  geom_bar(stat="identity", color = 'black') + 
+  geom_text(aes(label = Typ), color = "white",
+            position  = position_stack(vjust = 0.5)) + 
+  scale_fill_manual(values = unique(pts.typ$clr)) + 
+  scale_x_discrete(labels=c("EIA_I" = "Ältere Phase der \n frühe Eisenzeit \n(5.-2. Jh. v. Chr.)",
+                            "EIA_II" = "Mittlere Phase der \n frühe Eisenzeit \n(2. Jh. v. Chr.-2.Jh. n. Chr.)",
+                            "EIA_III" = "Jüngere Phase der \n frühe Eisenzeit \n(2-6. Jh. n. Chr.)",
+                            "MIA" = "Mittlere Eisenzeit \n(6.-10. Jh. n. Chr.)",
+                            "LIA_I" = "Ältere Phase der \n späten Eisenzeit \n(10.-15./16. Jh. n. Chr.)",
+                            "LIA_II" = "Mittlere Phase der \n späten Eisenzeit bzw. vorkoloniale Zeit \n(15./16.-19. Jh. n. Chr.)",
+                            "LIA_III" = "Jüngere Phase der \n späten Eisenzeit \n(19.-20. Jh. n. Chr.)")) + 
+  scale_y_continuous(limits = c(0, 350), 
+                     expand = c(0, 0)) + 
+  theme_bw() + 
+  theme(legend.position="bottom", 
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) + 
+  guides(fill=guide_legend(ncol = 18))
+ggsave("../output/figs/5_StilGrPerSites-Perioden.pdf", width = 11, height = 11)
+```
+
+## Variante auf die Jh. verteilte Darstellung
+
+```{r}
+cent <- read.csv("../lit/Zeitscheiben_StilGr-Jhd-Sequenz.csv", row.names = 1, dec = ",")
+cent
+```
+
+**ToDo's:**
+
+* korrekte Klassen-% für die Normalverteilungen (siehe Roberts et al. 2012)
+* ...
+
+
+```{r}
+cent$STYLE <- row.names(cent)
+
+cent.m <- melt(cent, id.vars = "STYLE", na.rm = T)
+
+
+# Liste mit Fpl. je StilGr aus der obrigen Betrachtung:
+sites <- unique(pts.typ[c("Typ", "nbr", "clr")])
+
+cent.sites <- merge(x = cent.m, y = sites, by.x = "STYLE", by.y = "Typ")
+
+cent.sites$actSites <- cent.sites$nbr * cent.sites$value
+
+# c entfernen
+cent.sites$variable <- gsub("X", "", cent.sites$variable)
+
+# . in - verwandeln
+cent.sites$variable <- gsub("\\.", "-", cent.sites$variable)
+
+cent.sites$variable <- as.numeric(cent.sites$variable)
+
+cent.sites
+```
+
+>> Liste der Anzahl Fpl. je StilGr
+
+>> Anzahl der Jh. an Liste mit Fpl. Anzahl anhängen >> Anzahl Fpl. / Anzahl Jhd.
+
+
+
+
+
+```{r}
+ggplot(cent.sites, aes(x = variable, y = actSites, fill = STYLE)) + 
+  geom_bar(stat="identity", color = 'black', size  = 0.1) + 
+  geom_text(aes(label = STYLE), color = "white",
+          position  = position_stack(vjust = 0.5), 
+          size = 1) + 
+  scale_fill_manual(values = unique(cent.sites$clr)) + 
+  scale_y_continuous(limits = c(0, 170), 
+                     expand = c(0, 0)) + 
+  theme_bw() + 
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())
+ggsave("../output/figs/5_StilGrPerSites-Jahrhunderte_Hist.pdf", width = 10, height = 6)
+```
+
+```{r}
+ggplot(cent.sites, aes(x = variable, y = actSites)) + 
+  geom_vline(xintercept = -200, linetype = 2, color = "#999999") + 
+  geom_vline(xintercept = 150, linetype = 2, color = "#999999") + 
+  geom_vline(xintercept = 600, linetype = 2, color = "#999999") + 
+  geom_vline(xintercept = 1100, linetype = 2, color = "#999999") + 
+  geom_vline(xintercept = 1600, linetype = 2, color = "#999999") + 
+  geom_vline(xintercept = 1850, linetype = 2, color = "#999999") + 
+  annotate("text", x = 50, y = 192, label = "Frühe Eisenzeit") + 
+  annotate("text", x = -350, y = 180, label = "Ältere Phase") + 
+  annotate("text", x = -25, y = 180, label = "Mittlere Phase") + 
+  annotate("text", x = 375, y = 180, label = "Jüngere Phase") + 
+  annotate("text", x = 850, y = 185, label = "Mittlere \n Eisenzeit") + 
+  annotate("text", x = 1700, y = 192, label = "Späte Eisenzeit") + 
+  annotate("text", x = 1350, y = 180, label = "Frühe Phase") + 
+  annotate("text", x = 1725, y = 178, label = "Mittlere\nPhase") + 
+  annotate("text", x = 1950, y = 178, label = "Späte\nPhase") + 
+  geom_bar(stat="identity") + 
+  scale_x_continuous("") + 
+  scale_y_continuous("Fundstellenhäufigkeit", limits = c(0, 199), 
+                     expand = c(0, 0)) + 
+  theme_bw() + 
+  theme(panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())
+ggsave("../output/figs/5_StilGrPerSites-Jahrhunderte_Hist2.pdf", width = 10, height = 5)
+```
+
+
+```{r}
+ggplot(cent.sites, aes(x = variable, y = actSites, fill = STYLE)) + 
+  geom_area(stat ="identity", color = 'black') + 
+  scale_fill_manual(values = unique(cent.sites$clr)) + 
+  scale_y_continuous(limits = c(0, 170), 
+                     expand = c(0, 0)) + 
+  theme_bw() + 
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())
+ggsave("../output/figs/5_StilGrPerSites-Jahrhunderte_Area.pdf", width = 10, height = 8)
+```
+
+
+

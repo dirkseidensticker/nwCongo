@@ -1,0 +1,53 @@
+---
+title: "ggtern: ternary diagrams in R "
+output: html_notebook
+---
+
+siehe: http://www.ggtern.com/docs/
+
+## Pakete laden
+```{r}
+library(doBy)
+library(ggtern)
+```
+
+## Daten laden
+```{r}
+df <- read.csv("Humphris2016_App2_Elemente.csv", dec = ',')
+df  
+```
+
+## Plot erstellen
+```{r}
+ggtern(data = df, aes(FeO, SiO2, Al2O3)) + 
+  geom_point(aes(color = Probe)) + 
+  theme_bw()
+ggsave("ternaryPlot.pdf")
+```
+
+Da hier mehrere Messungen je Probe vorgenommen wurden empfiehlt es sich, die Mittelwert je Probe zu besimmen (via summaryBy() aus dem Paket *doBy*) und weil es evtl. auch nützlich sein kann, die jeweiligen Maximal und Minimal je Element und Probe:
+
+```{r}
+df.sum <- summaryBy(. ~ Probe, 
+                    data = df, 
+                    FUN = function(x){c(min = min(x), mean = mean(x), max = max(x))})
+df.sum
+```
+
+Zusätzliche Informationen zu jeder Probe befinden sich in einer Separaten Datei, die via merge() mit der Liste der Messungen verbunden werden kann (kann auch schon weiter oben passieren, siehe dann summaryBy(. ~ Probe + WEITERE PARAMETER + ...) in 7_Eisenverhüttung).
+
+```{r}
+desc <- read.csv("Humphris2016_App2_Proben.csv")
+
+df.sum.desc <- merge(x = df.sum, y = desc, by = 'Probe')
+df.sum.desc
+```
+
+
+
+```{r}
+ggtern(data = df.sum.desc, aes(FeO.mean, SiO2.mean, Al2O3.mean)) + 
+  geom_point(aes(color = Typ, shape = Feature)) + 
+  theme_bw()
+ggsave("ternaryPlot_sum.pdf")
+```

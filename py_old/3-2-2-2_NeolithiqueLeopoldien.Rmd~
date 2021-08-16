@@ -1,0 +1,37 @@
+---
+title: "3.2.2.2 Neolithique leopoldien"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(ggmap)
+library(RSQLite)
+library(reshape)
+```
+
+## Verbreitung
+
+```{r}
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "data/CongoDB.sqlite")
+
+# nur sicher Imbonga
+df1 = dbGetQuery(con, "SELECT t_Obj.objID, t_Obj.ort_kurz, t_Obj.Komplex, t_Obj.Individuum, t_Obj.Typ, t_Ort.y_lat, t_Ort.x_long FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID) INNER JOIN t_Obj ON (t_Ort.ortID = t_Obj.ortID) AND (t_Komplex.komplexID = t_Obj.komplexID) WHERE (((t_Ort.ort_lit)='DS') AND ((t_Obj.Typ) = 'NeolLeo'))")
+head(df1)
+
+# nur nicht sicher Imbonga
+df2 = dbGetQuery(con, "SELECT t_Obj.objID, t_Obj.ort_kurz, t_Obj.Komplex, t_Obj.Individuum, t_Obj.Typ, t_Ort.y_lat, t_Ort.x_long FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID) INNER JOIN t_Obj ON (t_Ort.ortID = t_Obj.ortID) AND (t_Komplex.komplexID = t_Obj.komplexID) WHERE (((t_Ort.ort_lit)='DS') AND ((t_Obj.Typ) Like '%NeolLeo%?%'))")
+head(df2)
+```
+
+WICHTIG: ggmap funktioniert nur mit R 3.0, nicht in R 3.1!!!
+
+**Kartierung**
+
+Legende: Kreise = unsicher, Punkte = sicher
+
+```{r, fig.align='center'}
+qmap("Dongou", zoom = 7, color = 'bw') + geom_point(aes(x = x_long, y = y_lat), data = df2, size=1.5, shape = 21) + geom_text(aes(x = x_long+0.15, y = y_lat+0.07, label = ort_kurz), data = df2, size = 2) + geom_point(aes(x = x_long, y = y_lat), data = df1, size=1.5, shape = 19) + geom_text(aes(x = x_long+0.15, y = y_lat+0.07, label = ort_kurz), data = df1, size = 2) + ggtitle("Neolithique leopoldien-Gruppe\n")
+ggsave("output/3-2-2.2_Neolithiqueleopoldien_Verbreitung.pdf")
+```

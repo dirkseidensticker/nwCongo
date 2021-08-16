@@ -1,11 +1,11 @@
 \input{chpt/0_Head}
 
-\includeonly{chpt/1_Einleitung}	% ermöglichst, nur einzelne Kapitel auszugeben
+%\includeonly{chpt/6_Schluss}	% ermöglichst, nur einzelne Kapitel auszugeben
 
 %\sloppy	% großzügigeere Formatierung mit weniger Trennungen
 
 \begin{document}
-
+\onecolumn
 \input{chpt/0_FrontMatter}
 
 % für einseitiges Dokument mit zwei Bänden 0_Head anpassen und zwei getrennte Main-Datei (Bd1 & Bd2) machen:
@@ -13,7 +13,7 @@
 % Bd2: Katalog--Tafeln
 
 %\twocolumn % AP-Stil
-\part{Text}
+%\part{Text}
 
 \pagenumbering{arabic}
 
@@ -22,22 +22,17 @@
 \include{chpt/3_Keramiktechnologie}
 \include{chpt/4_Keramiksequenz}
 \include{chpt/5_Besiedlungsgeschichte}
-
 \include{chpt/6_Schluss}
-%\onecolumn % AP-Stil
 \newpage
-\addcontentsline{toc}{chapter}{Literatur}
-% Literaturverzeichnis 2-Spaltig
 \twocolumn
 \begin{singlespace}
 \printbibliography
+\input{chpt/7b_SonstQuellen}
 \end{singlespace}
 \onecolumn
 
-\include{chpt/9_SonstQuellen}
+\include{chpt/Kat}
 
-\include{chpt/9_Katalog}
-
-\include{chpt/10_Tafeln}
+\include{chpt/Tafeln}
 
 \end{document}

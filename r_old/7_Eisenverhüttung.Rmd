@@ -1,0 +1,401 @@
+---
+title: "Eisenverhüttung"
+output: html_notebook
+---
+
+```{r}
+library(doBy)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+library(ggtern)
+library(reshape2)
+library(sqldf)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+## Schlacken
+
+```{r}
+df = dbGetQuery(con, "SELECT
+            t_Obj.objID,
+            t_Obj.ortID,
+            t_Obj.ort_kurz || ' ' || t_Obj.Komplex AS KOMPLEX,
+            t_Obj.komplexID,
+            t_Obj.Individuum,
+            t_Obj.Art,
+            t_Obj.Anzahl,
+            t_Obj.Gewicht,
+            t_Obj.Schlacke_Typ
+        FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID)
+            INNER JOIN t_Obj ON (t_Ort.ortID = t_Obj.ortID)
+            AND (t_Komplex.komplexID = t_Obj.komplexID)
+        WHERE (((t_Obj.Art) Like '%Schlacke%')
+            AND ((t_Komplex.bef_art) Not Like '%Ober%')
+            AND ((t_Obj.Schlacke_Typ) != '')
+            AND ((t_Obj.ort_kurz) != 'BBS')
+            AND ((t_Obj.ort_kurz) != 'MDJ'))")
+head(df)
+```
+
+```{r}
+# nur grober Typ (alle Buchstaben raus):
+df$Schlacke_Typ <- gsub("[^0-9]", "", df$Schlacke_Typ)
+
+df_pivot <- data.frame(tapply(df$Gewicht, list(df$KOMPLEX, as.character(df$Schlacke_Typ)), sum), check.names = FALSE)
+
+# Prozentwerte
+df_pivot <- round((df_pivot / rowSums(df_pivot, na.rm = TRUE) * 100))
+df_pivot1 <- df_pivot
+df_pivot1$ID <- rownames(df_pivot1)
+df_pivot1
+```
+
+```{r}
+df_melt <- melt(df_pivot1, id = c('ID'))
+df_melt <- df_melt[complete.cases(df_melt),]
+```
+
+```{r}
+ggplot(df_melt, aes(x = ID, y = value, fill = variable)) + 
+  geom_bar(stat = "identity", width=.5) + 
+  coord_flip() +
+  scale_fill_brewer(palette = "Paired", direction=-1) + 
+  scale_y_continuous(name="%") + 
+  scale_x_discrete(name="") + 
+  theme(legend.position = "bottom") + 
+ggsave("../output/figs/7_Schlacken_Gewprozent.pdf", width = 4, height = 7.1)
+```
+
+### Hauptkomponentenanlayse
+
+```{r}
+df_pivot[is.na(df_pivot)] <- 0
+df_pivot
+```
+
+```{r}
+pc <- princomp(df_pivot, cor=TRUE, scores=TRUE)
+
+par(mfrow=c(1,2))
+plot(pc,type="lines", main = "")
+biplot(pc)
+p <- recordPlot()
+```
+
+```{r}
+pdf("../output/figs/7_Schlacken_PCA_Gewprozent.pdf", width = 12, height = 6)
+replayPlot(p)
+dev.off()
+```
+
+```{r}
+biplot(pc)
+p <- recordPlot()
+```
+
+```{r}
+pdf("../output/figs/7_Schlacken_PCAbiplot_Gewprozent.pdf", width = 6, height = 6)
+replayPlot(p)
+dev.off()
+```
+
+## Untersuchungen durch S. Keesmann in den 1980ern
+```{r}
+df_spe <- read.csv("../lit/Keesmann1983_185Tab1_Elemente.csv", encoding = 'Latin1', dec = ',')
+df_spe
+```
+
+```{r}
+ggplot(df_spe, aes(x = SiO2, y = FeO, label = Probe)) + 
+    geom_point(size = 5) + 
+#    geom_point(aes(shape = Type, fill = Type), size = 5) + 
+    geom_text_repel(size = 4, point.padding = unit(5, 'mm')) + 
+    scale_x_continuous(limits=c(10, 43)) + 
+    scale_y_continuous(limits=c(35, 85)) + 
+    labs(x = expression('SiO'[2]*' (%)'), y = 'FeO (%)') + 
+    scale_shape_manual(values=c(21, 22, 23)) + 
+    theme(legend.position = "bottom") + 
+    coord_equal()
+ggsave('../output/figs/7_Keesmann1983_185Tab1_SiO2vsFeO.pdf', width = 4.5, height = 6)
+```
+
+```{r}
+df_spe_Keesmann = df_spe
+```
+
+## Untersuchungen durch G. Gassmann 2003
+
+```{r}
+df_spe <- read.csv("../data/base/Gassmann2003_Elemente.csv", encoding = 'Latin1', dec = ',')
+df_env <- read.csv("../data/base/Gassmann2003_Proben.csv", encoding = 'Latin1')
+df_spe
+```
+
+```{r}
+df <- merge(df_spe, df_env, by = "Probe")
+colnames(df)[which(names(df) == "Typ")] <- "Type"
+df_Gassmann <- df
+```
+
+```{r}
+ggplot(df, aes(x = SiO2, y = Fe2O3, label = Feature)) + 
+    geom_point(aes(shape = Type, fill = Type), size = 5) + 
+    geom_text_repel(size = 4, point.padding = unit(10, 'mm')) + 
+    scale_x_continuous(limits=c(10, 43)) + 
+    scale_y_continuous(limits=c(35, 85)) + 
+    labs(x = expression('SiO'[2]*' (%)'), y = expression('Fe'[2]*'O'[3]*' (%)')) + 
+    scale_shape_manual(values=c(21, 22, 23)) + 
+    theme(legend.position = "bottom") + 
+    coord_equal()
+ggsave('../output/figs/7_Gassmann_SiO2vsFe2O3.pdf', width = 4.5, height = 6)
+```
+
+```{r}
+ggplot(df, aes(x = Cr, y = Bi)) + 
+    geom_point(aes(color= Type)) + 
+    coord_equal()
+```
+
+```{r}
+ggplot(df, aes(factor(Type), Fe)) + 
+    geom_boxplot(aes(fill = Type))
+```
+
+```{r}
+# Nur die Typen 1--4
+ggplot(df[df[,'Type'] != 5,], aes(x = SiO2, y = Fe2O3, label = Feature)) + 
+    geom_point(aes(shape = Type, fill = Type), size = 5) + 
+    geom_text_repel(size = 4, point.padding = unit(10, 'mm')) + 
+    scale_x_continuous(limits=c(20, 50)) + 
+    scale_y_continuous(limits=c(35, 75)) + 
+    labs(x = expression('SiO'[2]*' (%)'), y = expression('Fe'[2]*'O'[3]*' (%)')) + 
+    scale_shape_manual(values=c(21, 22, 23)) + 
+    scale_fill_manual(values=c("#EC756E", "#00ba38")) + 
+    theme(legend.position = "bottom") + 
+    coord_equal()
+ggsave('../output/figs/7_Gassmann_SiO2vsFe2O3_type1-4.pdf', width = 4.5, height = 6)
+```
+
+```{r}
+df_env
+```
+
+## Untersuchung durch J. Humphris/O. Nordland 2016
+
+```{r}
+df_spe <- read.csv("../data/base/Humphris2016_App2_Elemente.csv", encoding = 'Latin1', dec = ',')
+df_env <- read.csv("../data/base/Humphris2016_App2_Proben.csv", encoding = 'Latin1')
+df <- merge(df_spe, df_env, by = "Probe")
+colnames(df)[which(names(df) == "Typ")] <- "Type"
+
+head(df)
+```
+
+
+```{r}
+#df_group <- group_by(df, Probe, Type, Feature)
+#df_sum <- summarise(df_group, 
+#                    minSiO2 = min(SiO2), 
+#                    meanSiO2 = mean(SiO2), 
+#                    maxSiO2 = max(SiO2), 
+#                    minFeO = min(FeO), 
+#                    meanFeO = mean(FeO), 
+#                    maxFeO = max(FeO))
+#df_sum
+# die Variante hat irgendwie nur ein mal und dann nie wieder funktioniert
+# DS 13.05.2016
+
+df_sum <- summaryBy(. ~ Probe + Type + Feature, data = df, 
+                    FUN = function(x){c(min = min(x), mean = mean(x), max = max(x))})
+head(df_sum)
+```
+
+```{r}
+ggplot(df_sum, aes(x = SiO2.mean, y = FeO.mean)) + 
+    geom_errorbarh(aes(xmin = SiO2.min,
+                       xmax = SiO2.max,
+                       color = Probe),
+                       height = 1) +
+    geom_errorbar(aes(ymin = FeO.min,
+                      ymax = FeO.max,
+                      color = Probe),
+                      width = 1) +
+    geom_point(aes(color = Probe, shape = Probe), size = 4) + 
+    scale_shape_manual(values=1:nlevels(df_sum$Probe)) +
+    labs(x = expression('SiO'[2]*' (%)'), y = 'FeO (%)') + 
+    coord_equal()
+```
+
+```{r}
+#df_sum = df_sum.replace('', np.nan, regex=True)
+# df_sum
+df_sum[df_sum['Feature'] == 'NaN']
+```
+
+```{r}
+# alle Reihe ohne Feature-Eintrag herausfiltern - geom_text_repel() erzeugt ansonsten Striche für alle Zeilen
+df_sum_text_repel = df_sum[df_sum$Feature != '',]
+
+ggplot(df_sum, aes(x = SiO2.mean, y = FeO.mean, label = Feature)) + 
+    geom_errorbarh(aes(xmin = SiO2.min,
+                       xmax = SiO2.max,
+                       color = Type),
+                       height = 1) +
+    geom_errorbar(aes(ymin = FeO.min,
+                      ymax = FeO.max,
+                      color = Type),
+                      width = 1) +
+    geom_point(aes(fill = Type, shape = Type), size = 5) + 
+#    geom_point(aes(x = SiO2, y = FeO), data = df_spe_Keesmann, size = 5) + 
+    geom_text_repel(data = df_sum_text_repel, aes(x = SiO2.mean, y = FeO.mean), size = 4, point.padding = unit(7.5, 'mm')) + 
+    scale_x_continuous(limits=c(10, 45)) + 
+    scale_y_continuous(limits=c(35, 85)) + 
+    labs(x = expression('SiO'[2]*' (%)'), y = 'FeO (%)') + 
+    scale_color_manual(values=c("#EC756E", "#00ba38", "#a3a500")) +
+    scale_fill_manual(values=c("#EC756E", "#00ba38", "#a3a500")) + 
+    scale_shape_manual(values=c(21, 22, 24)) + 
+    theme(legend.position = "bottom") + 
+    coord_equal()
+ggsave('../output/figs/7_Humphris_SiO2vsFeO.pdf', width = 4.5, height = 6)
+```
+
+```{r}
+# Nur die beiden Grabungsbefunde
+ggplot(df_sum[df_sum[,'Feature'] != '',], aes(x = SiO2.mean, y = FeO.mean, label = Feature)) + 
+    geom_errorbarh(aes(xmin = SiO2.min,
+                       xmax = SiO2.max,
+                       color = Type),
+                       height = 1) +
+    geom_errorbar(aes(ymin = FeO.min,
+                      ymax = FeO.max,
+                      color = Type),
+                      width = 1) +
+    geom_point(aes(fill = Type, shape = Type), size = 5) + 
+#    geom_point(aes(x = SiO2, y = FeO), data = df_spe_Keesmann, size = 5) + 
+    geom_text_repel(data = df_sum_text_repel, aes(x = SiO2.mean, y = FeO.mean), size = 4, point.padding = unit(7.5, 'mm')) + 
+    scale_x_continuous(limits=c(20, 50)) + 
+    scale_y_continuous(limits=c(35, 75)) + 
+    labs(x = expression('SiO'[2]*' (%)'), y = 'FeO (%)') + 
+#    scale_color_manual(values=c("#EC756E", "#00ba38", "#a3a500")) +
+#    scale_fill_manual(values=c("#EC756E", "#00ba38", "#a3a500")) + 
+    scale_shape_manual(values=c(21, 22, 24)) + 
+    theme(legend.position = "bottom") + 
+    coord_equal()
+ggsave('../output/figs/7_Humphris_SiO2vsFeO_type1-4.pdf', width = 4.5, height = 6)
+```
+
+```{r}
+df_spe_Humphris = df_sum
+```
+
+## Zusammenschau
+
+```{r}
+library(gtools)
+# Tabellen mergen
+df <- smartbind(df_spe, df_spe_Keesmann)
+```
+
+```{r}
+ggplot() + 
+    geom_point(aes(x = SiO2.mean, y = FeO.mean), data = df_sum, size = 5, color = '#EC756E') + 
+    geom_point(aes(x = SiO2, y = FeO), data = df_spe_Keesmann, size = 5, color = '#00ba38') + 
+    scale_x_continuous(limits=c(10, 45)) + 
+    scale_y_continuous(limits=c(35, 85)) + 
+    coord_equal()
+```
+
+## Dreiecksdiagramm
+
+auf Hinweis durch Eileen Kose (Köln; 23.06.2016)
+
+> "Zu den Diagrammen gehört das Flussmittel dazu! Al od K!"
+
+```{r}
+df_spe_Keesmann$Analyse <- 'Keesmann 1983'
+df_spe_Humphris$Analyse <- 'Humphris/Nordland 2016'
+df_Gassmann$Analyse <- 'Gassmann 2003'
+
+# Proben aus dem Arbeitsgebeit Wotzka die von Humphris/Nordland untersucht wurden, raus:
+df_spe_Humphris <- df_spe_Humphris[df_spe_Humphris[,'Feature'] != 'X',]
+```
+
+```{r}
+plot <- ggtern()
+plot <- ggplot() + coord_tern() #Alternate
+plot <- plot + 
+        geom_point(data = df_spe_Keesmann, aes(FeO, SiO2, Al2O3, shape = Analyse), size = 4, fill = 'grey') + 
+        geom_point(data = df_spe_Humphris, aes(FeO.mean, SiO2.mean, Al2O3.mean, shape = Analyse), size = 4, fill = 'grey') + 
+        geom_point(data = df_spe_Humphris[df_spe_Humphris[,'Feature'] != '',], aes(FeO.mean, SiO2.mean, Al2O3.mean, fill = Type, shape = Analyse), size = 4) + 
+        geom_point(data = df_Gassmann, aes(Fe2O3, SiO2, Al2O3, fill = Type, shape = Analyse), size = 4) + 
+        theme_bw() + 
+        theme(legend.position="right") + 
+        scale_shape_manual(values = c(24, 25, 23)) +
+        guides(fill = guide_legend(title = 'Typ', 
+                                   override.aes = list(shape = 22))) # shapes in der Legende manuell festlegen
+plot
+ggsave('../output/figs/7_Schlacken_SiO2vsFeOvsAl2O3.pdf', width = 8, height = 5)
+```
+
+```{r}
+head(df_Gassmann, 1)
+```
+
+```{r}
+head(df_spe_Humphris, 1)
+```
+
+```{r}
+df_spe_Humphris[df_spe_Humphris[,'Feature'] != '',]
+```
+
+```{r}
+head(df_spe_Keesmann, 1)
+```
+
+```{r}
+df_spe_Keesmann1 <- df_spe_Keesmann[,c('Probe', 'FeO', 'SiO2', 'Al2O3')]
+df_spe_Keesmann1$Type <- ''
+df_spe_Keesmann1$Analysis <- 'Keesmann 1983'
+#df_spe_Keesmann1 <- rename(df_spe_Keesmann1, c("Probe"="Sample"))
+df_spe_Keesmann1
+```
+
+```{r}
+df_Gassmann1 <- df_Gassmann[,c('Probe', 'Fe2O3', 'SiO2', 'Al2O3', 'Type')]
+df_Gassmann1$Analysis <- 'Gassmann 2003'
+#df_Gassmann1 <- rename(df_Gassmann1, c("Probe"="Sample", 'Fe2O3'='FeO'))
+df_Gassmann1
+```
+
+```{r}
+#df_spe_Humphris1 <- df_spe_Humphris[df_spe_Humphris[,'Feature'] != '',]
+df_spe_Humphris1 <- df_spe_Humphris[, c('Probe', 'FeO.mean', 'SiO2.mean', 'Al2O3.mean', 'Type')]
+df_spe_Humphris1$FeO.mean <- round(df_spe_Humphris1$FeO.mean, 2)
+df_spe_Humphris1$SiO2.mean <- round(df_spe_Humphris1$SiO2.mean, 2)
+df_spe_Humphris1$Al2O3.mean <- round(df_spe_Humphris1$Al2O3.mean, 2)
+df_spe_Humphris1$Analysis <- 'Humphris/Nordland 2016'
+#df_spe_Humphris1 <- rename(df_spe_Humphris1, c("Probe"="Sample", "FeO.mean"="FeO", "SiO2.mean" = "SiO2", "Al2O3.mean" = "Al2O3"))
+df_spe_Humphris1
+```
+
+```{r}
+df_spe_all <- rbind(df_spe_Keesmann1, df_Gassmann1, df_spe_Humphris1)
+df_spe_all$Type <- replace(df_spe_all$Type, df_spe_all$Type == "", '-')
+
+# sortierung aller Zeilen mit Typ
+a <- df_spe_all[df_spe_all$Type != '-', ][order(df_spe_all[df_spe_all$Type != '-', ]$Type),]
+
+# sortierung aller Zeilen ohne Typ
+b <- df_spe_all[!df_spe_all$Type != '-', ][order(df_spe_all[!df_spe_all$Type != '-', ]$Type),]
+
+df_spe_all <- rbind(a, b)
+write.csv(df_spe_all, "../data/processed/7_Schlacken_Spe_alle.csv", dec = '.')
+# CSV in Pandas einlesen und LaTeX umwandeln
+df_spe_all
+```
+

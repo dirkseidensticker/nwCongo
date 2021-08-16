@@ -1,0 +1,165 @@
+---
+title: "MLB 85/1-4-3"
+output: html_notebook
+---
+
+```{r}
+library(ca)
+library(DiagrammeR)
+library(ggplot2)
+library(grDevices)
+library(reshape2)
+library(sqldf)
+
+source("myfunctions.R")
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+## 14C-Datierungen
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           t_14C.LABNR,
+           t_14C.C14AGE,
+           t_14C.C14STD
+       FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID)
+           INNER JOIN t_14c ON t_Komplex.komplexID = t_14c.komplexID
+       WHERE (((t_Ort.ort_kurz) = 'MLB')
+           AND ((t_Komplex.bef_nr) = '85/1-4-3'))")
+df
+```
+
+2-Sigma = 95,4%:
+
+* 100% - 95,4% = 4,6%
+* 4,6% / 2 = 2,3%
+* linker Rand = 2,3%
+* rechter Rand = 100% - 2,3% = 97,7%
+
+3-Sigma = 99,7%:
+
+* 100% - 99,7% = 0,3%
+* 0,3% / 2 = 0,15%
+* linker Rand = 0,15%
+* rechter Rand = 100% - 0,15% = 99,85%
+
+```{r}
+# 2-Sigma
+df$Min2Sigma <- qnorm(0.023, mean = df$C14AGE, sd = df$C14STD)
+df$Max2Sigma <- qnorm(0.977, mean = df$C14AGE, sd = df$C14STD)
+# 3-Sigma
+df$Min3Sigma <- qnorm(0.0015, mean = df$C14AGE, sd = df$C14STD)
+df$Max3Sigma <- qnorm(0.9985, mean = df$C14AGE, sd = df$C14STD)
+df
+```
+
+## 2-Sigma
+http://www.statmethods.net/advgraphs/probability.html
+
+```{r}
+savepdf("../output/figs/9-03_MLB85-1-4-3_14C-Uncalib_2Sigma.pdf", width = 8, height = 2)
+for(i in 1:nrow(df)){
+    mean <- df$C14AGE[i]
+    sd <- df$C14STD[i]
+    lb <- df$Min2Sigma[i]
+    ub <- df$Max2Sigma[i]
+    label <- df$LABNR[i]
+
+    x <- seq(-4, 4, length = 100) * sd + mean
+    hx <- dnorm(x, mean, sd)
+
+    coord.x = seq(lb, ub, by = 0.1)
+    coord.y = dnorm(coord.x, mean = mean, sd = sd)
+
+    plot(x, hx,type = "l", xlim=c(400, 1100), xlab = "", ylab = "", xaxt = 'n', yaxt = 'n')
+    polygon(c(lb, coord.x, ub),c(0, coord.y, 0), col = rgb(0, 0, 0, 0.1), border = NA)
+    segments(mean, 0, mean, dnorm(1), lty = 2)
+    axis(3, at = c(mean), labels = c(label))
+    par(new = T)
+}
+abline(h=0)
+p <- recordPlot()
+dev.off()
+
+replayPlot(p)
+```
+
+## 3-Sigma
+
+```{r}
+savepdf("../output/figs/9-03_MLB85-1-4-3_14C-Uncalib_3Sigma.pdf", width = 8, height = 2)
+for(i in 1:nrow(df)){
+    mean <- df$C14AGE[i]
+    sd <- df$C14STD[i]
+    lb <- df$Min3Sigma[i]
+    ub <- df$Max3Sigma[i]
+
+    x <- seq(-4, 4, length = 100) * sd + mean
+    hx <- dnorm(x, mean, sd)
+
+    coord.x = seq(lb, ub, by = 0.1)
+    coord.y = dnorm(coord.x, mean = mean, sd = sd)
+
+    plot(x, hx,type = "l", xlim=c(400, 1100), xlab = "BP", ylab = "", yaxt = 'n')
+    polygon(c(lb, coord.x, ub),c(0, coord.y, 0), col = rgb(0, 0, 0, 0.1), border = NA)
+    segments(mean, 0, mean, dnorm(1), lty = 2)
+    par(new = T)
+}
+abline(h=0)
+
+abline(v = df$Max3Sigma[1], lty = 2)
+abline(v = df$Min3Sigma[2], lty = 2)
+
+rect(df$Min3Sigma[2], 0, df$Max3Sigma[1], 1, density = 7.5, border = NA, angle = 45, lwd = 0.5)
+
+axis(3, at = c(df$Max3Sigma[1]), labels = c(round(df$Max3Sigma[1])))
+axis(3, at = c(df$Min3Sigma[2]), labels = c(round(df$Min3Sigma[2])))
+
+p <- recordPlot()
+dev.off()
+
+replayPlot(p)
+```
+
+```{r}
+matrix(1:2, ncol = 1)
+
+for(i in 1:nrow(df)){
+    mean <- df$C14AGE[i]
+    sd <- df$C14STD[i]
+    lb <- df$Min2Sigma[i]
+    ub <- df$Max2Sigma[i]
+
+    x <- seq(-4, 4, length = 100) * sd + mean
+    hx <- dnorm(x, mean, sd)
+
+    coord.x = seq(lb, ub, by = 0.1)
+    coord.y = dnorm(coord.x, mean = mean, sd = sd)
+
+    plot(x, hx,type = "l", xlim=c(400, 1100), xlab = "", ylab = "", xaxt = 'n', yaxt = 'n')
+    polygon(c(lb, coord.x, ub),c(0, coord.y, 0), col = rgb(0, 0, 0, 0.1), border = NA)
+    segments(mean, 0, mean, dnorm(1), col = "darkgray", lty = 2)
+    par(new = T)
+}
+
+for(i in 1:nrow(df)){
+    mean <- df$C14AGE[i]
+    sd <- df$C14STD[i]
+    lb <- df$Min3Sigma[i]
+    ub <- df$Max3Sigma[i]
+
+    x <- seq(-4, 4, length = 100) * sd + mean
+    hx <- dnorm(x, mean, sd)
+
+    coord.x = seq(lb, ub, by = 0.1)
+    coord.y = dnorm(coord.x, mean = mean, sd = sd)
+
+    plot(x, hx,type = "l", xlim=c(400, 1100), xlab = "BP", ylab = "", yaxt = 'n')
+    polygon(c(lb, coord.x, ub),c(0, coord.y, 0), col = rgb(0, 0, 0, 0.1), border = NA)
+    segments(mean, 0, mean, dnorm(1), col = "darkgray", lty = 2)
+    par(new = T)
+}
+```
+

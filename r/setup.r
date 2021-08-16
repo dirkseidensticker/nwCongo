@@ -1,3 +1,4 @@
+library(dplyr)
 library(ggplot2)
 library(ggrepel)
 library(ggsn)
@@ -13,5 +14,5 @@ library(splitstackshape)
 library(viridis)
 
 drv <- dbDriver("SQLite")
-con <- dbConnect(drv, "../data/CongoDB.sqlite")
+con <- dbConnect(drv, "../data/base/nwCongoDB.sqlite")
 # con <- dbConnect(drv, "www.github.com ... WEBVERSION")

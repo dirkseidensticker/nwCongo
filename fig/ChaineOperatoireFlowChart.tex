@@ -1,0 +1,58 @@
+{\sffamily
+% Define block styles
+\tikzstyle{startstop} = [draw, ellipse, fill=black!5, node distance=3cm, minimum height=2em]
+\tikzstyle{action} = [rectangle, draw, fill=black!5, text width=5em, text centered, rounded corners, minimum height=3em]
+\tikzstyle{decision} = [diamond, draw, fill=black!5, text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
+\tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=black!5, node distance=3cm]
+\tikzstyle{subsys} = [draw, rectangle split, rectangle split horizontal,rectangle split parts=3, text centered, minimum height=1cm, draw=black, fill=black!5]
+\tikzstyle{line} = [draw, -latex']
+
+\begin{tikzpicture}[node distance = 2cm, auto]
+% Place nodes
+\node [io] (clay) {\footnotesize Roh-Ton};
+\node [decision, below of = clay, node distance=2cm] (temper) {\footnotesize Magerung};
+\node [decision, below of = temper, node distance=4cm] (direction) {\footnotesize Richtung};
+\node [decision, below of = direction, node distance=4cm] (sections) {\footnotesize Abschnitte};
+\node [action, below of = sections, node distance=2.5cm] (upper) {\footnotesize Obere Hälfte};
+\node [action, right of = upper, node distance=3cm] (lower) {\footnotesize Untere Hälfte};
+\node [action, left of = upper, node distance=3cm] (body) {\footnotesize Gesamt};	
+\node [decision, below of = upper, node distance=2.6cm] (technique) {\footnotesize Technik};
+\node [action, below of = technique, node distance=2.5cm] (coiling) {\footnotesize Aufbauen};
+\node [action, left of = coiling, node distance=3cm] (drawing) {\footnotesize Treiben};
+\node [action, right of = coiling, node distance=3cm] (molding) {\footnotesize Abformen};
+\node [subsys, below of = coiling, node distance=2.5cm] (decoration) {\nodepart[text width=2cm]{two}\shortstack{\footnotesize Verzierung}};
+\node [subsys, below of = decoration, node distance=2cm] (firing) {\nodepart[text width=2cm]{two}\shortstack{\footnotesize Brand}};
+\node [io, below of = firing, node distance=2cm] (vessel) {\footnotesize Gefäß};
+
+\draw [decorate, decoration={brace, amplitude = 4pt}] ([xshift=6cm]clay.north) -- ([xshift=6cm]clay.south) node [black, midway, xshift = .15cm] {\footnotesize 1.1 / 1.2 };
+\draw [decorate, decoration={brace, amplitude = 4pt}] ([xshift=6cm]temper.north) -- ([xshift=6cm, yshift = -4.5em]temper.south) node [black, midway, xshift = .15cm] {\footnotesize 1.3 };
+\draw [decorate, decoration={brace, amplitude = 4pt}] ([xshift=6cm, yshift = -1em]direction.north) -- ([xshift=6cm, yshift = 1em]sections.north) node [black, midway, xshift = .15cm] {\footnotesize 2.1 };
+\draw [decorate, decoration={brace, amplitude = 4pt}] ([xshift=6cm]sections.north) -- ([xshift=6cm, yshift = 1em]technique.north) node [black, midway, xshift = .15cm] {\footnotesize 2.2 };
+\draw [decorate, decoration={brace, amplitude = 4pt}] ([xshift=6cm]technique.north) -- ([xshift=6cm, yshift = 1em]decoration.north) node [black, midway, xshift = .15cm] {\footnotesize 2.3 };
+\draw [decorate, decoration={brace, amplitude = 4pt}] ([xshift=6cm]decoration.north) -- ([xshift=6cm]decoration.south) node [black, midway, xshift = .15cm] {\footnotesize 3 };
+\draw [decorate, decoration={brace, amplitude = 4pt}] ([xshift=6cm]firing.north) -- ([xshift=6cm]firing.south) node [black, midway, xshift = .15cm] {\footnotesize 4 };
+
+% Draw edges
+\path [line] (clay) -- (temper);
+
+\path [line] (temper.south) to[] + (0,-.3) to[] + (-2,-.3) |- node [near start, anchor = east] {\footnotesize Ja} ++(-2, -1.25) -| (direction.north);
+\path [line] (temper.south) to[] + (0,-.3) to[] + (2,-.3) |- node [near start, anchor = west] {\footnotesize Nein} ++(2, -1.25) -|  (direction.north);
+\path [line] (direction.south) to[] + (0,-.3) to[] + (-2,-.3) |- node [near start, anchor = east] {\footnotesize von unten nach oben} ++(-2, -1.25) -| (sections.north);
+\path [line] (direction.south) to[] + (0,-.3) to[] + (2,-.3) |- node [near start, anchor = west] {\footnotesize von oben nach unten} ++(2, -1.25) -|  (sections.north);
+\path [line] (sections) -- (upper);
+\path [line] (sections.south) |- ++(0, -.3) -| node [near start, anchor = south] {2} (lower);
+\path [line] (sections.south) |- ++(0, -.3) -| node [near start, anchor = south] {1} (body);
+\path [line] (upper) -- (technique);
+\path [line] (lower.south) |- ++(0, -.3) -| (technique.north);
+\path [line] (body.south) |- ++(0, -.3) -| (technique.north);
+\path [line] (technique) -- (coiling);
+\path [line] (technique.south) |- ++(0, -.3) -| (drawing.north);
+\path [line] (technique.south) |- ++(0, -.3) -| (molding.north);
+\path [line] (drawing.south) |- ++(0, -.3) -| (decoration.north);
+\path [line] (coiling) -- (decoration);	
+\path [line] (molding.south) |- ++(0, -.3) -| (decoration.north);
+\path [line] (decoration) -- (firing);		
+\path [line] (firing) -- (vessel);		
+
+\end{tikzpicture}
+}

@@ -1,0 +1,24 @@
+digraph boxes_and_circles {
+
+  graph [overlap = true]
+
+    # 'node' statements
+    node [shape = box,
+          fontname = Helvetica]
+      A[label = 'feine Flusstone'];
+      B[label = 'kein Zusatz'];
+      C[label = 'int. Magerung'];
+      D[label = 'Wulstaufbau'];
+      E[label = 'Negativform'];
+      F[label = 'Ziehen aus Ring']
+  
+    # 'edge' statements
+      A->B;
+      A->C[label = 'woher?',fontname = Helvetica];
+      B->D;
+      B->E;
+      B->F;
+      C->D;
+      C->E;
+      C->F;
+  }

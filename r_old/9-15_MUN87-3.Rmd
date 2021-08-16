@@ -1,0 +1,169 @@
+---
+title: "Kat.-Nr. 18 MUN 87/3"
+output: html_notebook
+---
+
+# PIK 87/3
+
+```{r}
+library(ca)
+library(ggplot2)
+library(RColorBrewer)
+library(reshape2)
+library(plyr)
+library(RSQLite)
+library(scales)
+library(sqldf)
+library(viridis)
+
+source("myfunctions.R")
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+## Fachdaten
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           t_Obj.ort_kurz, 
+           t_Obj.Komplex, 
+           t_Obj.Individuum, 
+           t_Obj.Typ, 
+           t_Obj.Anzahl,
+           t_Obj.Gewicht,
+           t_Obj.Gr_Clist, 
+           t_Obj.Fabric,
+           t_Obj.Art,
+           t_Obj.Schlacke_Typ,
+           t_Obj.Notiz
+       FROM t_Obj 
+       WHERE (((t_Obj.ort_kurz) = 'MUN')
+           AND ((t_Obj.Komplex) LIKE '87/3%'))")
+df
+```
+
+```{r}
+sum(df$Gewicht)
+```
+
+## Art
+
+```{r}
+a <- sqldf('SELECT * FROM df WHERE Art != ""')
+
+df_pivot <- as.data.frame(with(df, tapply(Gewicht, list(Art), sum)))
+
+colnames(df_pivot) <- c("value")
+df_pivot$group <- rownames(df_pivot)
+rownames(df_pivot) <- NULL
+
+df_pivot$pct <- round(df_pivot$value / sum(df_pivot$value) * 100)
+
+df_pivot
+```
+
+```{r}
+cols <- read.csv("../data/colPalette/ArtCol.csv")
+
+types <- as.data.frame(unique(df_pivot$group))
+colnames(types) <- c("Typ")
+
+types <- merge(x = types, y = cols, by.x = "Typ", by.y = "Art")
+
+types
+```
+
+
+```{r}
+ggplot(df_pivot, aes(x="", y=value, fill=group)) + 
+  geom_bar(width = 1, stat = "identity", color = 'black') + 
+  coord_polar("y", start=0) + 
+  scale_fill_manual(values = paste(types$col), 
+                    label = types$Label,
+                    name = "Material") + 
+  blank_theme +
+  theme(axis.text.x=element_blank()) + 
+  geom_text(aes(y = value/3 + c(0, cumsum(value)[-length(value)]), 
+            label = paste(types$Label, "\n(", percent(pct/100), ")", sep = "")), size=5) + 
+  theme(legend.position="none")
+ggsave("../output/figs/9-18_MUN87-3_Funde_R.pdf", width = 6, height = 6)
+```
+
+## Stilgruppe/Typ
+
+```{r}
+a <- sqldf('SELECT * FROM df WHERE Typ != ""')
+
+df_pivot <- as.data.frame(with(df, tapply(Gewicht, list(Typ), sum)))
+
+colnames(df_pivot) <- c("value")
+df_pivot$group <- rownames(df_pivot)
+rownames(df_pivot) <- NULL
+
+df_pivot$pct <- round(df_pivot$value / sum(df_pivot$value) * 100)
+
+df_pivot$rel <- FALSE
+df_pivot$rel[nchar(as.character(df_pivot$group)) <= 3] <- TRUE
+
+df_pivot
+```
+
+```{r}
+cols <- read.csv("../lit/Wotzka1995_StilGrKuerzel.csv")
+cols <- cols[,c("Farbe", "Typ")]
+
+types <- as.data.frame(unique(df_pivot$group))
+colnames(types) <- c("Typ")
+
+types$TypEinfach <- substr(types$Typ, 1, 3)
+types <- merge(x = types, y = cols, by.x = "TypEinfach", by.y = "Typ")
+
+types
+```
+
+```{r}
+ggplot(df_pivot, aes(x = "", 
+                     y = value,
+                     fill = group,
+                     alpha = rel)) + 
+  geom_bar(width = 1, stat = "identity", color = 'black') + 
+  coord_polar("y", start=0) + 
+  scale_fill_manual(values = paste("#", types$Farbe, sep = '')) +
+  scale_alpha_discrete(range = c(0.66, 1), guide=FALSE) + 
+  blank_theme +
+  theme(axis.text.x=element_blank()) + 
+  geom_text(aes(y = value/3 + c(0, cumsum(value)[-length(value)]), 
+            label = paste(group, "\n(", percent(pct/100), ")", sep = "")), alpha = 1, size=5) + 
+  theme(legend.position="none")
+ggsave("../output/figs/9-18_MUN87-3_Stilgruppen_R.pdf", width = 6, height = 6)
+```
+
+
+## Schlacken-Typen
+
+```{r}
+a <- sqldf('SELECT * FROM df WHERE Schlacke_Typ != ""')
+
+df_pivot <- as.data.frame(with(a, tapply(Gewicht, list(Schlacke_Typ), sum)))
+
+colnames(df_pivot) <- c("value")
+df_pivot$group <- rownames(df_pivot)
+rownames(df_pivot) <- NULL
+
+df_pivot$pct <- round(df_pivot$value / sum(df_pivot$value) * 100)
+
+df_pivot
+```
+
+```{r}
+ggplot(df_pivot, aes(x="", y=value, fill=group)) + 
+  geom_bar(width = 1, stat = "identity", color = 'black') + 
+  coord_polar("y", start=0) + 
+  blank_theme +
+  theme(axis.text.x=element_blank()) + 
+  geom_text(aes(y = value/3 + c(0, cumsum(value)[-length(value)]), 
+            label = paste(group, "\n(", percent(pct/100), ")", sep = "")), size=5) + 
+  theme(legend.position="none")
+ggsave("../output/figs/9-18_MUN87-3_Schlacketypen_R.pdf", width = 6, height = 6)
+```

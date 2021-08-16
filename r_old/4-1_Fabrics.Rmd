@@ -1,0 +1,509 @@
+---
+title: "4-1_Fabrics"
+output: html_notebook
+---
+
+```{r}
+library(ca)
+library(FactoMineR)
+library(gclus)
+library(ggmap)
+library(ggplot2)
+library(RColorBrewer)
+library(reshape2)
+library(RSQLite)
+library(sqldf)
+library(vegan)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+## Verbreitung der *fabrics*
+
+```{r}
+df_all = dbGetQuery(con, "SELECT
+                t_Obj.objID, 
+                t_Ort.ort_kurz, 
+                't_Ort'.'ort_kurz' || '/' || 't_Ort'.'x_long' || '/' || 't_Ort'.'y_lat' AS SITE, 
+                t_Komplex.bef_nr, 
+                t_Obj.Individuum, 
+                t_Obj.MagerungArt, 
+                t_Obj.Fabric, 
+                t_Ort.x_long, 
+                t_Ort.y_lat 
+                FROM t_Obj INNER JOIN t_Komplex ON t_Obj.komplexID = t_Komplex.komplexID INNER JOIN t_Ort ON t_Komplex.ortID = t_Ort.ortID 
+                WHERE (((t_Ort.ort_lit)='DS') 
+                AND ((t_Obj.Fabric) != ''))")
+head(df_all)
+```
+
+```{r}
+df_all_a <- data.frame(tapply(df_all$objID, list(df_all$SITE), length))
+names(df_all_a)[1] <- "value_all"
+df_all_a$variable <- rownames(df_all_a) 
+head(df_all_a)
+```
+
+### Übersicht über alle fabrics (ohne Untertypen)
+
+```{r}
+# alles bis auf die ersten zwei Stellen raus -- so bleiben bei mehreren möglichkeiten nur die ersten
+df_all$Fabric_1 <- substr(df_all$Fabric, 0, 2)
+# alles, was keine Zahl ist raus (siehe http://r.789695.n4.nabble.com/Numeric-Characters-in-String-td3817873.html)
+df_all$Fabric_2 <- gsub("[^0-9]","",df_all$Fabric_1)
+
+df_all$Fabric_2 <- as.numeric(as.character(df_all$Fabric_2))
+```
+
+```{r}
+ggplot(df_all, aes(x = x_long, y = y_lat)) + 
+  geom_point() + 
+#  geom_hex(aes(x = x_long, y = y_lat), data = df_all, alpha = .7, bins = 10) + 
+#  scale_fill_gradientn(colours = rev(heat.colors(12))) + 
+  coord_equal() + 
+  theme_bw() + 
+  facet_wrap(~ Fabric_2, ncol = 6) + 
+  theme(legend.justification=c(1,0), 
+      legend.position=c(1,0),
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank())
+# ggsave("../output/figs/4_fabrics_Facet.pdf", width = 12, height = 9)
+```
+
+```{r}
+# Prozentwerte je Fpl
+# *******************
+
+df_all_pivot <- dcast(df_all, SITE ~ Fabric_2, 
+                      value.var = "objID", 
+                      fun.aggregate = length)
+
+# SITE-Spalte als Index festlegen
+rownames(df_all_pivot) <- df_all_pivot$SITE
+df_all_pivot$SITE <- NULL
+# head(df_all_pivot)
+
+# Zeilen-basierte Prozentwerte = Anteil Fabric je Fpl (=100%)
+df_all_pivot <- round((df_all_pivot / rowSums(df_all_pivot) * 100))
+# head(df_all_pivot)
+
+# head(rowSums(df_all_pivot))
+
+rownames(df_all_pivot) -> df_all_pivot$SITE
+# head(df_all_pivot)
+
+# Kreuztabelle in Long-Format
+df_all_pivot_long <- melt(df_all_pivot, id = c('SITE'))
+# head(df_all_pivot_long)
+
+# Zeile mit Null-Werten löschen
+df_all_pivot_long <- subset(df_all_pivot_long, df_all_pivot_long$value > 1)
+# head(df_all_pivot_long)
+
+df_all_pivot_long$SITE <- as.character(df_all_pivot_long$SITE)
+df_all_pivot_long <- transform(df_all_pivot_long, Var = do.call(rbind, strsplit(df_all_pivot_long$SITE, '/', fixed = TRUE)), stringsAsFactors = F)
+df_all_pivot_long$Var.2 <- as.numeric(as.character(df_all_pivot_long$Var.2))
+df_all_pivot_long$Var.3 <- as.numeric(as.character(df_all_pivot_long$Var.3))
+# head(df_all_pivot_long)
+```
+
+```{r}
+qmap("Dongou", zoom = 7, maptype = 'roadmap', color = 'bw') + 
+  geom_point(aes(x = Var.2, y = Var.3, size = value, fill = value), data = df_all_pivot_long, shape = 22, alpha = 0.8) + 
+  facet_wrap(~ variable, ncol = 3) + 
+  scale_size_continuous(range = c(1,5), name  ="Anteil je\nFpl. [%]") + 
+  scale_fill_gradientn(colours = rev(heat.colors(12)), name  ="Anteil je\nFpl. [%]") + 
+  theme(#legend.justification=c(1,0), 
+        #legend.position=c(1,0), 
+        #legend.box = "horizontal",
+        panel.margin = unit(0.5, "lines"),
+        axis.ticks = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+ggsave("../output/figs/4_fabrics_Facet_map.pdf", width = 12, height = 12)
+```
+
+### GIS
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           t_Obj.objID,
+           t_Ort.ort_kurz, 
+           t_Ort.x_long AS X, 
+           t_Ort.y_lat AS Y, 
+           t_Obj.Anzahl,
+           t_Obj.Fabric
+       FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID)
+           INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+       WHERE (((t_Obj.Fabric) != '')
+           AND ((t_Obj.Fabric) Not Like '%/%')
+           AND ((t_Obj.Fabric) Not Like '%(?)%')
+           AND ((t_Ort.ort_lit) = 'DS'))")
+
+# nur grober Typ (alle Buchstaben raus):
+df$Fabric <- gsub("[^0-9]", "", df$Fabric)
+
+df_pivot <- dcast(df, ort_kurz + X + Y ~ Fabric)
+head(df_pivot)
+```
+
+```{r}
+a1 <- data.frame(table(df$Fabric))
+# a1
+```
+
+```{r}
+p <- ggplot(a1, aes (factor(Var1), Freq, fill = factor(Var1))) + 
+    geom_bar(stat = "identity") + 
+    scale_fill_manual(values=c("#e41a1c", "#FF7F00", "#4DAF4A", "#377EB8", "#984EA3", "#999999", "#A65628", "#F781BF", "#FFFF33"))
+ggsave(plot = p, "../output/figs/4-1_Fabrics_Qty.pdf", width = 12, height = 9)
+p
+```
+
+> Füllfarben extrahieren
+> https://stackoverflow.com/questions/11774262/how-to-extract-the-fill-colours-from-a-ggplot-object/11774500#11774500
+
+```{r}
+g <- ggplot_build(p)
+unique(g$data[[1]]["fill"])
+```
+
+
+## Korrespondenzanalyse
+*fabrics* vs. Typen
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           t_Obj.objID,
+           t_Obj.Typ,
+           t_Obj.Fabric
+       FROM t_Obj
+       WHERE (((t_Obj.Fabric) != '')
+           AND ((t_Obj.Fabric) Not Like '%?%')
+           AND ((t_Obj.Fabric) Not Like '%/%')
+           AND ((t_Obj.Typ) != '')
+           AND ((t_Obj.Typ) Not Like '%?%')
+           AND ((t_Obj.Typ) Not Like '%/%')
+           AND ((t_Obj.Typ) Not Like '%herd%')
+           AND ((t_Obj.Typ) Not Like '%Pfei%')
+           AND ((t_Obj.Typ) Not Like '%Roul%')
+           AND ((t_Obj.Typ) Not Like '%rez%'))")
+head(df)
+```
+
+```{r}
+# bei den Fabrics die Untergruppen 'abschneiden'
+df$Fabric <- gsub("[^0-9]", "", df$Fabric)
+
+df_pivot <- tapply(df$objID, list(df$Typ, df$Fabric), length)
+df_pivot[is.na(df_pivot)] <- 0
+
+head(df_pivot)
+```
+
+### vegan
+
+```{r}
+spe <- df_pivot
+#spe.ca <- cca(spe)
+#spe.ca
+
+#ev <- eigenvals(spe.ca)
+#ev <- unclass(ev)
+#ev <- data.frame(ev)
+
+#pdf("../output/figs/4-1_Fabrics_CA-Stilgr_vegan.pdf", width = 12, height = 6, useDingbats=FALSE)
+#par(mfrow = c(1, 2))
+#barplot(t(as.matrix(ev)))
+#title(sub = "...")
+#plot(spe.ca, scaling=1, xlab = paste("CA1 (",round(ev[1,], digits = 2),"%)"), ylab = paste("CA2 (",round(ev[2,], digits = 2),"%)"))
+#title(sub = "Bi-Plot")
+#dev.off()
+
+#pdf("../output/figs/4-1_Fabrics_CA-Stilgr.pdf", width = 12, height = 6, useDingbats=FALSE)
+#par(mfrow = c(1, 2))
+#plot(ca(df_pivot))
+#title(sub = "1. und 2. Hauptachse")
+#plot(ca(df_pivot), dim = c(2, 3))
+#title(sub = "2. und 3. Hauptachse")
+#dev.off()
+```
+
+### FactoMineR
+
+```{r}
+res.ca <- CA(spe)
+p <- recordPlot()
+```
+
+```{r}
+pdf("../output/figs/4-1_Fabrics_CA-Stilgr.pdf")
+replayPlot(p)
+dev.off()
+```
+
+## Kombination Cluster & Korrespondenzanlyse
+
+```{r}
+df = dbGetQuery(con, "SELECT
+                    t_Obj.objID, 
+                    t_Obj.Fabric, 
+                    t_Obj.Typ
+                FROM t_Obj INNER JOIN t_Komplex ON t_Obj.komplexID = t_Komplex.komplexID INNER JOIN t_Ort ON t_Komplex.ortID = t_Ort.ortID 
+                    WHERE (((t_Obj.Fabric) Not Like '%/%') 
+                    AND ((t_Obj.Fabric) != '')
+                    AND ((t_Obj.Typ) Not Like '%(?)%')
+                    AND ((t_Obj.Typ) Not Like '%/%')
+                    AND ((t_Obj.Typ) != '')
+                    AND ((t_Obj.Typ) Not Like '%herd%')
+                    AND ((t_Obj.Typ) Not Like '%Pfei%')
+                    AND ((t_Obj.Typ) Not Like '%Roul%')
+                    AND ((t_Obj.Typ) Not Like '%rez%'))")
+# head(df)
+
+# alles bis auf die ersten zwei Stellen raus -- so bleiben bei mehreren möglichkeiten nur die ersten
+df$Fabric1 <- substr(df$Fabric, 0, 2)
+# alles, was keine Zahl ist raus (siehe http://r.789695.n4.nabble.com/Numeric-Characters-in-String-td3817873.html)
+df$Fabric2 <- gsub("[^0-9]","",df$Fabric1)
+df$Fabric2 <- as.numeric(as.character(df$Fabric2))
+
+df_pivot <- tapply(df$objID, list(df$Typ, df$Fabric2), length)
+df_pivot[is.na(df_pivot)] <- 0
+```
+
+---
+nach Borcard/Gillet u.a. 2011: 133 ff.
+
+```{r}
+spe <- df_pivot
+spe.ca <- cca(spe)
+spe.ca
+```
+
+```{r}
+ev <- eigenvals(spe.ca)
+ev <- unclass(ev)
+ev <- data.frame(ev)
+```
+
+```{r}
+#pdf("../output/figs/2-2-1-2_FabricsTypen_CA.pdf", width=6, height=6)
+plot(spe.ca, scaling=1, xlab = paste("CA1 (",round(ev[1,], digits = 2),"%)"), ylab = paste("CA2 (",round(ev[2,], digits = 2),"%)"))
+#dev.off()
+```
+
+---
+nach Borcard/Gillet u.a. 2011: 65 ff.
+
+```{r}
+spe <- df_pivot
+
+spe.norm <- decostand(spe, "normalize")
+spe.ch <- vegdist(spe.norm, "euc")
+spe.ch.ward <- hclust(spe.ch, method = "ward.D2")
+spe.ch.ward
+```
+
+```{r}
+#pdf("../output/figs/2-2-1-2_FabricsTypen_Cluster_WardD2.pdf", width=6, height=6)
+plot(spe.ch.ward)
+#dev.off()
+```
+
+```{r}
+summary(spe.ch.ward)
+```
+
+```{r}
+df_pivot2 <- t(df_pivot)
+spe <- df_pivot2
+
+spe.norm <- decostand(spe, "normalize")
+spe.ch <- vegdist(spe.norm, "euc")
+spe.ch.ward <- hclust(spe.ch, method = "ward.D2")
+spe.ch.ward
+```
+
+```{r}
+#pdf("../output/figs/2-2-1-2_Fabrics_Cluster_WardD2.pdf", width=6, height=6)
+plot(spe.ch.ward)
+#dev.off()
+```
+
+```{r}
+summary(spe.ch.ward)
+```
+
+```{r}
+plot(spe.ch.ward$height, nrow(df_pivot2):2, type = "S")
+```
+
+Optimal number of clusters according to Mantel statistic (Pearson)
+
+```{r}
+# Function to compute a binary distance matrix from groups
+grpdist <- function(X)
+{
+  require(cluster)
+  gr <- as.data.frame(as.factor(X))
+  distgr <- daisy(gr, "gower")
+  distgr
+}
+
+# Run based on the Ward clustering
+kt <- data.frame(k=1:nrow(spe), r=0)
+for (i in 2:(nrow(spe)-1)) {
+  gr <- cutree(spe.ch.ward, i)
+  distgr <- grpdist(gr)
+  mt <- cor(spe.ch, distgr, method="pearson")
+  kt[i,2] <- mt
+}
+# kt
+k.best <- which.max(kt$r)
+
+k.best
+```
+
+```{r}
+plot(kt$k, kt$r, type="h", main="Mantel-optimal number of clusters - Ward", 
+     xlab="k (number of groups)", ylab="Pearson's correlation")
+axis(1, k.best, paste("optimum", k.best, sep="\n"), col="red", font=2,
+     col.axis="red")
+points(k.best, max(kt$r), pch=16, col="red", cex=1.5)
+cat("", "Mantel-optimal number of clusters k =", k.best, "\n", 
+    "with a matrix linear correlation of", max(kt$r), "\n")
+p <- recordPlot()
+```
+
+```{r}
+pdf("../output/figs/4-1_Fabrics_Cluster_WardD2_optCluster_1.pdf", width=6, height=6)
+replayPlot(p)
+dev.off()
+```
+
+> optimale Anzahl Cluster = 6
+
+Silhouette plot of the final partition
+
+```{r}
+# Choose the number of clusters
+k <- k.best
+# Silhouette plot
+cutg <- cutree(spe.ch.ward, k=k)
+sil <- silhouette(cutg, spe.ch)
+rownames(sil) <- row.names(spe)
+```
+
+```{r}
+plot(sil, main="Silhouette plot - Chord - Ward", 
+     cex.names=0.8, col=2:(k+1), nmax=100)
+p <- recordPlot()
+```
+
+```{r}
+pdf("../output/figs/4-1_Fabrics_Cluster_WardD2_optCluster_2.pdf", width=6, height=6)
+replayPlot(p)
+dev.off()
+```
+
+Final dendrogram with the selected groups
+
+```{r}
+spe.chwo <- reorder.hclust(spe.ch.ward, spe.ch)
+```
+
+```{r}
+# Function hcoplot()
+# Reorder and plot dendrogram with colors for groups and legend
+#
+# Usage:
+# hcoplot(tree = hclust.object, diss = dissimilarity.matrix, k = nb.clusters, 
+#	title = paste("Reordered dendrogram from",deparse(tree$call),sep="\n"))
+#
+# License: GPL-2 
+# Author: Francois Gillet, 23 August 2012
+
+"hcoplot" <- function(tree, diss, k) #, title=paste("Reordered dendrogram from", deparse(tree$call), sep="\n"))
+{
+  require(gclus)
+  gr <- cutree(tree, k=k)
+  tor <- reorder.hclust(tree, diss)
+  plot(tor, hang=-1, xlab=paste(length(gr),"Fabrics"), sub=paste(k,"Cluster"), main = "") #, main=title)
+  so <- gr[tor$order]
+  gro <- numeric(k)
+  for (i in 1:k)
+  {
+    gro[i] <- so[1]
+    if (i<k) so <- so[so!=gro[i]]
+  }
+  rect.hclust(tor, k=k, border=gro+1, cluster=gr)
+  legend("top", ncol = 3, paste("Cluster",1:k), pch = 2:(k+1), xpd = TRUE, inset = c(0,-.18), col=2:(k+1))
+}
+```
+
+```{r}
+hcoplot(spe.ch.ward, spe.ch, k=k)
+p <- recordPlot()
+```
+
+```{r}
+pdf("../output/figs/4-1_Fabrics_Cluster_Ward_Opt.pdf", width=6, height=6)
+replayPlot(p)
+dev.off()
+```
+
+```{r}
+# Cluster-Zuweisung herausholen:
+spebc.ward.g <- cutree(spe.ch.ward, k)
+```
+
+```{r}
+plot(spe.ca, 
+     display = 'si', 
+     type = 'n', 
+     xlab = paste("CA1 (",round(ev[1,], digits = 2),"%)"), 
+     ylab = paste("CA2 (",round(ev[2,], digits = 2),"%)"))
+# for (i in unique (spebc.ward.g)) ordihull (spe.ca, groups = spebc.ward.g, show.group = i, col = i+1, draw = 'polygon', alpha = 25)
+points(spe.ca, col = ((spebc.ward.g)+1), pch = (spebc.ward.g)+1)
+text(spe.ca, labels = rownames(as.data.frame(spe.ca$rowsum)), pos = 4, cex = 0.6)
+# text(spe.ca, display = "spe", head.arrow = 0.05, cex = 0.6, col = "red")
+legend("bottomright", paste("Group", 1:k), pch = 2:(k+1), col = 2:(k+1))
+p <- recordPlot()
+```
+
+```{r}
+pdf("../output/figs/4-1_Fabrics_CA_Ward_Opt.pdf", width=6, height=6)
+replayPlot(p)
+dev.off()
+```
+
+>> ZUWEISUNG FARBEN IST FALSCH!!!
+
+## Heat map
+
+```{r}
+# Heat map of the distance matrix ordered with the dendrogram
+dend <- as.dendrogram(spe.chwo)
+heatmap(as.matrix(spe.ch), Rowv=dend, symm=TRUE, margin=c(3,3))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

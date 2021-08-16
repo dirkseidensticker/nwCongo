@@ -1,31 +1,31 @@
 Farbe,Typ,Stilgruppe,FROM,TO,REL,Region,Tradition,N-S,POS,EIA_I,EIA_II,EIA_III,MIA,LIA_I,LIA_II,LIA_III,Lit
-,,Akonetye North,-100,400,1,Kamerun,,1,4,,,,,,,,
-,,Akonetye South,-100,400,1,Kamerun,,1,5,,,,,,,,
+,,Akonetye North,0,400,1,Kamerun,,1,4,,,,,,,,
+,,Akonetye South,0,400,1,Kamerun,,1,5,,,,,,,,
 ,,Bidjouka,50,600,1,Kamerun,,1,6,,,,,,,,
-,,Bissiang/Malongo,-500,-50,1,Kamerun,,1,1,,,,,,,,
+,,Bissiang/Malongo,-500,-50,1,Kamerun,,1,3,,,,,,,,
 ,,Bwambé/Mpoengu,-400,-50,1,Kamerun,,1,2,,,,,,,,
-,,Campo,0,400,1,Kamerun,,1,3,,,,,,,,
+,,Campo,0,400,1,Kamerun,,1,1,,,,,,,,
 ,,Obobogo,-500,-200,1,Kamerun,,1,7,,,,,,,,
 ,,Yatou,-100,100,0,Kamerun,,1,7,,,,,,,,
 #9dab4e,KON,Konda,1350,1550,0,nordwestliches Kongobecken,Ngoko-Tradition,2,3,,,,,x,,,Seidensticker 2017: Kap. 4.2.2.9
 #60b242,MDB,Mandombe,1300,1500,1,nordwestliches Kongobecken,Ngoko-Tradition,2,2,,,,,x,,,Seidensticker 2017: Kap. 4.2.2.8
-#92b275,MBJ,Mbenja,1900,2000,1,nordwestliches Kongobecken,Ngoko-Tradition,2,2,,,,,,,x,Seidensticker 2017: Kap. 4.2.2.12
+#92b275,MBJ,Mbenja,1900,1987,1,nordwestliches Kongobecken,Ngoko-Tradition,2,2,,,,,,,x,Seidensticker 2017: Kap. 4.2.2.12
 #59b46e,OUE,Ouesso,1500,1700,0,nordwestliches Kongobecken,Ngoko-Tradition,2,1,,,,,x,x,,Seidensticker 2017: Kap. 4.2.2.10
 #68712a,PDM,Pandama,1600,1900,0,nordwestliches Kongobecken,Ngoko-Tradition,2,3,,,,,,x,,Seidensticker 2017: Kap. 4.2.2.11
-#515c91,BAN,Bangui,1900,2000,1,nordwestliches Kongobecken,Ubangi,3,3,,,,,,,x,Seidensticker 2017: Kap. 4.2.1.11
+#515c91,BAN,Bangui,1900,1985,1,nordwestliches Kongobecken,Ubangi,3,3,,,,,,,x,Seidensticker 2017: Kap. 4.2.1.11
 #2a4b9b,BTM,Batalimo-Maluba,-200,600,1,nordwestliches Kongobecken,Ubangi,3,2,,x,x,,,,,Seidensticker 2017: Kap. 4.2.1.1
 #44bdd6,BBL,Bobulu,1200,1700,0,nordwestliches Kongobecken,Ubangi,3,4,,,,,x,x,,Seidensticker 2017: Kap. 4.2.1.4
-#6cbde9,DAM,Dama,1900,2000,1,nordwestliches Kongobecken,Ubangi,3,2,,,,,,,x,Seidensticker 2017: Kap. 4.2.1.9
+#6cbde9,DAM,Dama,1900,1985,1,nordwestliches Kongobecken,Ubangi,3,2,,,,,,,x,Seidensticker 2017: Kap. 4.2.1.9
 #305fa7,DON,Dongo,900,1600,0,nordwestliches Kongobecken,Ubangi,3,3,,,,x,x,,,Seidensticker 2017: Kap. 4.2.1.3
-#88a1d4,KPT,Kpetene,1900,2000,1,nordwestliches Kongobecken,Ubangi,3,4,,,,,,,x,Seidensticker 2017: Kap. 4.2.1.8
-#327aad,MBN,Mbati-Ngombe,1900,2000,1,nordwestliches Kongobecken,Ubangi,3,1,,,,,,,x,Seidensticker 2017: Kap. 4.2.1.10
+#88a1d4,KPT,Kpetene,1900,1985,1,nordwestliches Kongobecken,Ubangi,3,4,,,,,,,x,Seidensticker 2017: Kap. 4.2.1.8
+#327aad,MBN,Mbati-Ngombe,1900,1985,1,nordwestliches Kongobecken,Ubangi,3,1,,,,,,,x,Seidensticker 2017: Kap. 4.2.1.10
 #6785c1,MKL,Mokelo,900,1600,0,nordwestliches Kongobecken,Ubangi,3,2,,,,x,x,,,Seidensticker 2017: Kap. 4.2.1.5
 #36a3d4,MTB,Motenge-Boma,1500,1800,0,nordwestliches Kongobecken,Ubangi,3,1,,,,,,x,,Seidensticker 2017: Kap. 4.2.1.7
 #4f87c6,NGB,Ngbanja,-200,500,0,nordwestliches Kongobecken,Ubangi,3,3,,x,x,,,,,Seidensticker 2017: Kap. 4.2.1.2
 ,UNG,Ubangi-Ngiri-Import,,,,nordwestliches Kongobecken,Ubangi,3,,,,,,,,,Wotzka 1995: Kap. 7.35
-#85529C,YNG,Early Pottery Phase (cf. Bomane Yangwa),-400,100,1,nordöstliches Kongobecken,,4,1,x,x,,,,,,LivingstoneSmith.2017
+#85529C,YNG,Early Phase (cf. Bomane Yangwa),-400,100,1,nordöstliches Kongobecken,,4,2,x,x,,,,,,LivingstoneSmith.2017
 #BF67A6,ILA,Ilambi,700,1600,0,nordöstliches Kongobecken,,4,1,,,,x,,,,LivingstoneSmith.2017
-#A9529A,MOK,Middle Pottery Phase (cf. Ilambi Moke),50,450,1,nordöstliches Kongobecken,,4,2,,x,x,,,,,LivingstoneSmith.2017
+#A9529A,MOK,Middle Phase (cf. Ilambi Moke),50,450,1,nordöstliches Kongobecken,,4,3,,x,x,,,,,LivingstoneSmith.2017
 #BA87BB,YAE,Yaekela,1100,1850,0,nordöstliches Kongobecken,,4,2,,,,,x,x,,LivingstoneSmith.2017
 #77549d,LSL,Lisala,1900,1980,0,nordöstliches Kongobecken,Nord-Tradition,5,1,,,,,,,x,Wotzka 1995: Kap. 7.33
 #b15199,NKB,Nkomba,1800,1900,0,nordöstliches Kongobecken,Nord-Tradition,5,2,,,,,,x,,Wotzka 1995: Kap. 7.34
@@ -44,12 +44,12 @@ Farbe,Typ,Stilgruppe,FROM,TO,REL,Region,Tradition,N-S,POS,EIA_I,EIA_II,EIA_III,M
 #df3c73,BOK,Bokuma,200,550,1,Inneres Kongobecken,West-Tradition,9,2,,,x,,,,,Wotzka 1995: Kap. 7.11
 #e28f8f,BKW,Bokwango,1300,1800,0,Inneres Kongobecken,West-Tradition,9,1,,,,,x,x,,Seidensticker 2017: Kap. 4.2.1.6
 #b5303a,BDG,Bondongo,1000,1400,1,Inneres Kongobecken,West-Tradition,9,4,,,,,x,,,Wotzka 1995: Kap. 7.13; Seidensticker 2017: Kap. 4.3.1.2
-#de1420,BON,Bonkake,-250,-50,0,Inneres Kongobecken,West-Tradition,9,6,,x,,,,,,Wotzka 1995: Kap. 7.2
+#de1420,BON,Bonkake,-250,-50,0,Inneres Kongobecken,West-Tradition,9,2,,x,,,,,,Wotzka 1995: Kap. 7.2
 #a6482d,BOT,Botendo,1700,1920,1,Inneres Kongobecken,West-Tradition,9,4,,,,,,x,,Wotzka 1995: Kap. 7.16; Seidensticker 2017: Kap. 4.3.1.4
-#914e5b,IKE,Ikenge,1900,2000,1,Inneres Kongobecken,West-Tradition,9,5,,,,,,,x,EggertKanimba1980
+#914e5b,IKE,Ikenge,1900,1978,1,Inneres Kongobecken,West-Tradition,9,5,,,,,,,x,EggertKanimba1980
 #e63326,IMB,Imbonga,-400,-100,1,Inneres Kongobecken,West-Tradition,9,4,x,,,,,,,Wotzka 1995: Kap. 7.1; Seidensticker 2017: Kap. 4.3.1.1
-#e21f39,IGD,Inganda,-200,100,1,Inneres Kongobecken,West-Tradition,9,3,,x,,,,,,Wotzka 1995: Kap. 7.4
-#e95226,ING,Ingende,-250,-50,0,Inneres Kongobecken,West-Tradition,9,5,,x,,,,,,Wotzka 1995: Kap. 7.32
+#e21f39,IGD,Inganda,-200,100,1,Inneres Kongobecken,West-Tradition,9,5,,x,,,,,,Wotzka 1995: Kap. 7.4
+#e95226,ING,Ingende,-250,-50,0,Inneres Kongobecken,West-Tradition,9,3,,x,,,,,,Wotzka 1995: Kap. 7.32
 #d86b87,LIK,Likuku,1700,1900,0,Inneres Kongobecken,West-Tradition,9,2,,,,,,x,x,Wotzka 1995: Kap. 7.29
 #cf4c30,LNG,Lingonda,200,700,1,Inneres Kongobecken,West-Tradition,9,3,,,x,,,,,Wotzka 1995: Kap. 7.10
 #e52554,LOK,Lokondola,-100,400,0,Inneres Kongobecken,West-Tradition,9,8,,x,x,,,,,Wotzka 1995: Kap. 7.5
@@ -60,37 +60,37 @@ Farbe,Typ,Stilgruppe,FROM,TO,REL,Region,Tradition,N-S,POS,EIA_I,EIA_II,EIA_III,M
 #e77952,MBA,Mbandaka,1000,1400,0,Inneres Kongobecken,West-Tradition,9,3,,,,,x,,,Wotzka 1995: Kap. 7.14; Seidensticker 2017: Kap. 4.3.1.3
 #e94a43,MON,Monkoto,-100,200,1,Inneres Kongobecken,West-Tradition,9,7,,x,,,,,,Wotzka 1995: Kap. 7.7
 #e26364,NKI,Nkile,1300,1600,0,Inneres Kongobecken,West-Tradition,9,2,,,,,,x,,Wotzka 1995: Kap. 7.15
-#c43118,YET,Yete,100,400,0,Inneres Kongobecken,West-Tradition,9,5,,,x,,,,,Wotzka 1995: Kap. 7.6
+#c43118,YET,Yete,100,400,0,Inneres Kongobecken,West-Tradition,9,4,,,x,,,,,Wotzka 1995: Kap. 7.6
 #bc908c,BEK,Bekongo,1000,1200,0,Inneres Kongobecken,Luilaka-Tradition,10,2,,,,,x,,,Wotzka 1995: Kap. 7.17
 #aa5651,WAF,Wafanya,1100,1300,0,Inneres Kongobecken,Luilaka-Tradition,10,1,,,,,x,,,Wotzka 1995: Kap. 7.18
 #e1996a,BOG,Bokonongo,-200,500,0,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,3,,x,x,,,,,Seidensticker 2017: Kap. 4.2.2.2
-#be7f3f,EBA,Ebambe,1500,2000,1,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,2,,,,,,x,x,Seidensticker 2017: Kap. 4.2.2.5
-#cb6614,EPE,Epena,1900,2000,1,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,3,,,,,,,x,Seidensticker 2017: Kap. 4.2.2.6
+#be7f3f,EBA,Ebambe,1500,1987,1,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,2,,,,,,x,x,Seidensticker 2017: Kap. 4.2.2.5
+#cb6614,EPE,Epena,1900,1987,1,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,3,,,,,,,x,Seidensticker 2017: Kap. 4.2.2.6
 ,LWK186,LKW186,-200,250,1,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,1,,,,,,,,
 #fdcb67,MAT,Matoto,1200,1400,0,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,3,,,,,x,,,Seidensticker 2017: Kap. 4.2.2.4
-#996713,MKA,Mobaka,1900,2000,1,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,1,,,,,,,x,Seidensticker 2017: Kap. 4.2.2.7
+#996713,MKA,Mobaka,1900,1987,1,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,1,,,,,,,x,Seidensticker 2017: Kap. 4.2.2.7
 #f39668,NGO,Ngombe,1100,1300,0,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,1,,,,,x,,,Seidensticker 2017: Kap. 4.2.2.3
 #ec661c,PKM,Pikunda-Munda,-200,500,1,nordwestliches Kongobecken,Sangha/Likwala-aux-Herbes,11,2,,x,x,,,,,Wotzka 1995: Kap. 7.35; Seidensticker 2017: Kap. 4.2.2.1
 #659898,BBS,Bobusa,250,700,0,nordwestliches Kongobecken,Unterer Sangha,12,1,,,x,x,,,,Seidensticker 2017: Kap. 4.2.2.13
-,,Angondje,1000,1500,1,Gabun,,13,1,,,,,,,,
+,,Angondjé,1000,1500,1,Gabun,,13,2,,,,,,,,
 ,,Nandá/Groupe II,900,1200,1,Gabun,,13,5,,,,,,,,
 ,,Okala,-500,0,1,Gabun,,13,2,,,,,,,,
 ,,Okanda,-50,600,1,Gabun,,13,3,,,,,,,,
-,,Otoumbi,50,550,1,Gabun,,13,4,,,,,,,,
-,,Oveng,0,800,1,Gabun,,13,1,,,,,,,,
+,,Otoumbi,50,550,1,Gabun,,13,1,,,,,,,,
+,,Oveng,0,800,1,Gabun,,13,4,,,,,,,,
 ,,Gombe,250,525,1,Niederkongo,,14,5,,,,,,,,Clist et al. 2018: 443 Fig. 31.1
 ,,Groupe II,1400,1900,1,Niederkongo,,14,4,,,,,,,,
 ,,Groupe III,1400,1650,0,Niederkongo,,14,6,,,,,,,,
 ,,Groupe V,1600,1900,1,Niederkongo,,14,2,,,,,,,,Clist et al. 2018: 259-261
 ,,Groupe X,1700,1900,1,Niederkongo,,14,5,,,,,,,,
-,,"Ceramic Later Stone Age pottery, Phase 1",-1000,500,0,Niederkongo,,14,9,,,,,,,,
-,,"Ceramic Later Stone Age pottery, Phase 2",-800,-300,0,Niederkongo,,14,10,,,,,,,,
+,,"Ceramic Later Stone Age pottery, Phase 1",-1000,-500,0,Niederkongo,,14,9,,,,,,,,
+,,"Ceramic Later Stone Age pottery, Phase 2",-400,-150,0,Niederkongo,,14,8,,,,,,,,
 ,,Herringbone/Carinated Broadly Grooved,-350,530,1,Niederkongo,,14,6,,,,,,,,Clist et al. 2018
-,,Hist. Zeit,1450,2000,1,Niederkongo,,14,8,,,,,,,,
+,,Hist. Zeit,1450,2000,1,Niederkongo,,14,,,,,,,,,
 ,,Kay Ladio,30,475,1,Niederkongo,,14,3,,,,,,,,Clist et al. 2018: 443 Fig. 31.1
 ,,Kindoki,1300,1450,1,Niederkongo,,14,7,,,,,,,,Clist et al. 2018: 443 Fig. 31.1
 ,,Kitala,250,525,0,Niederkongo,,14,2,,,,,,,,Clist et al. 2018: 443 Fig. 31.1
-,,Woven,1000,1700,0,Niederkongo,,14,8,,,,,,,,
+,,Woven,1000,1700,0,Niederkongo,,14,9,,,,,,,,
 ,,Spaced Curvilinear,200,800,0,Niederkongo,,14,7,,,,,,,,
 ,,Kongo,1450,1850,1,Niederkongo,,14,3,,,,,,,,Clist et al. 2018: 443 Fig. 31.1
 ,,Mbafu,1280,1450,0,Niederkongo,,14,2,,,,,,,,Clist et al. 2018: 443 Fig. 31.1
@@ -99,11 +99,11 @@ Farbe,Typ,Stilgruppe,FROM,TO,REL,Region,Tradition,N-S,POS,EIA_I,EIA_II,EIA_III,M
 ,,Ngovo,-420,130,1,Niederkongo,,14,4,,,,,,,,Clist et al. 2018: 443 Fig. 31.1
 ,,Tchissanga,-800,-400,1,Niederkongo,,14,5,,,,,,,,Clist et al. 2018
 ,,Classical Kisalian,900,1300,1,Upemba-Depression,,15,3,,,,,,,,de Maret 1992: 216; de Maret 2016: 22
-,,Early Kisalian,700,1000,1,Upemba-Depression,,15,2,,,,,,,,de Maret 1992: 216; de Maret 2016: 21
-,,Kabambian A,1200,1500,1,Upemba-Depression,,15,4,,,,,,,,de Maret 1992: 216; de Maret 2016: 22
-,,Kabambian B,1500,1700,1,Upemba-Depression,,15,5,,,,,,,,de Maret 1992: 216; de Maret 2016: 22
-,,Kamilambian,600,700,1,Upemba-Depression,,15,1,,,,,,,,de Maret 1992: 216; de Maret 2016: 21
-,,Luba,1700,1900,1,Upemba-Depression,,15,6,,,,,,,,de Maret 1992: 216
+,,Early Kisalian,700,1000,1,Upemba-Depression,,15,4,,,,,,,,de Maret 1992: 216; de Maret 2016: 21
+,,Kabambian A,1200,1500,1,Upemba-Depression,,15,2,,,,,,,,de Maret 1992: 216; de Maret 2016: 22
+,,Kabambian B,1500,1700,1,Upemba-Depression,,15,1,,,,,,,,de Maret 1992: 216; de Maret 2016: 22
+,,Kamilambian,600,700,1,Upemba-Depression,,15,5,,,,,,,,de Maret 1992: 216; de Maret 2016: 21
+,,Luba,1700,1900,1,Upemba-Depression,,15,5,,,,,,,,de Maret 1992: 216
 ,,EIA,-500,500,,,,,,,,,,,,,
 ,,LIA,1000,2000,,,,,,,,,,,,,
 ,UEL,Uele-Import,,,,,,,,,,,,,,,Wotzka 1995: Kap. 7.35

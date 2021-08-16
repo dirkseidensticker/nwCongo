@@ -1,0 +1,330 @@
+---
+title: "4_Keramikherstellung"
+output: html_notebook
+---
+
+* [Fabrics](#Fabrics)
+    * [Korrespondenzanalyse](#Korrespondenzanalyse)
+    * [Verbreitung der *fabrics*](#Verbreitung-der-fabrics)
+        * [Verbreitung *fabric* 9](#Verbreitung-fabric-9)
+* [Herstellungstechnik](#Herstellungstechnik)
+    * [Organigramm](#Organigramm)
+    * [Makrospuren](#Makrospuren)
+    * [Kartierung rezenter Herstellungstechniken](#Kartierung-rezenter-Herstellungstechniken)
+        * [Langlois 2001](#Langlois-2001)
+    * [Korrespondenzhanalyse](#Makrospuren-Korrespondenzhanalyse)
+
+```{r}
+library(ca)
+library(DiagrammeR)
+library(gplots)
+library(ggplot2)
+library(ggmap)
+library(gtools)
+library(reshape2)
+library(sqldf)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+## Herstellungstechnik
+> *chaîne opératoir*
+
+### Organigramm
+
+```{r}
+DiagrammeR::grViz("4_Keramikherstellung_Organigramm.gv")
+```
+
+## Aufnahme der Makrospuren
+
+Die Aufnahme erfolgte nach dem Muster der Verzierungselemente. Bei der Gefäßposition wurden die entsprechendenen Positions-ID's aus der Datenbank verwendet. Diese beziehen sich aber bei den Makrospuren auf die Gefäßinnenseite.
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           [t_Ort].[ort_name] || ' (Fpl. ' || [Kat-Nr] || ')' AS Fundplatz,
+           t_ort.x_long AS X,
+           t_ort.y_lat AS Y,
+           [t_Ort].[ort_kurz] || ' ' || [t_Komplex].[bef_nr] AS KOMPLEX,
+           [t_Ort].[ort_kurz] || ' ' || [t_Komplex].[bef_nr] || ':' || [t_obj].[Individuum] AS [Indiv],
+           t_Obj.objID,
+           t_obj.Individuum,
+           t_obj.Karton,
+           t_Obj.Typ AS [Stilgruppe],
+           t_Obj.Tafel AS [Taf.],
+           t_Obj.Form_Gef
+       FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID)
+           INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+       WHERE (((t_Ort.ort_lit)='DS'))")
+df
+```
+
+
+### Liste der Makro-Spuren
+
+```{r}
+df_traces <- read.csv("../data/base/macrotraces.csv", encoding='utf8')
+colnames(df_traces) <- c('Code', 'Makro-Spur')
+df_traces
+```
+
+```{r}
+tab <- read.csv("../data/base/macrotraces_Obj-Pos-Trace.csv")
+tab
+
+# die nicht diagnostischen Spuren A-B rausfiltern
+
+sel <- tab[grep("C|D", tab$traceID), ]
+```
+
+```{r}
+# nur mit der Auswahl von Spuren C & D weiter arbeiten:
+df_merge <- merge(x = df, y = sel, by = "objID")
+
+df_pivot <- dcast(df_merge, Indiv ~ traceID, value.var = "objID")
+rownames(df_pivot) <- df_pivot$Indiv
+df_pivot$Indiv <- NULL
+df_pivot
+```
+
+
+
+## Makrospuren
+> Analyse (Genf)
+
+```{r}
+#df <- read.csv("../data/processed/4_macrotraces1.csv", row.names = 2)
+df_pivot[is.na(df_pivot)] <- 0
+df_pivot <- as.matrix(df_pivot)
+
+scaleCol <- colorRampPalette(c("white", "red"))(n = 256)
+df_pivot
+```
+
+```{r}
+heatmap.2(df_pivot, col = scaleCol)
+p <- recordPlot()
+```
+
+```{r}
+pdf("../output/figs/4_macrotraces.pdf", width = 8, height = 8)
+replayPlot(p)
+dev.off()
+```
+
+## Kartierung rezenter Herstellungstechniken
+
+```{r}
+df <- read.csv("../data/base/PotteryProdTechnique.csv", dec=",")
+
+# Bounding-Box für Fpl.-Namen
+# siehe http://stackoverflow.com/questions/7660893/boxed-geom-text-with-ggplot2
+TextFrame <- data.frame(X = df$X + 2, Y = df$Y + 0.5, LAB = df$Name)
+TextFrame <- transform(TextFrame,
+                       w = strwidth(LAB, 'inches') + 0.2,
+                       h = strheight(LAB, 'inches') + 0.2
+)
+
+unique(df$Typ)
+```
+
+```{r}
+head(df)
+```
+
+```{r}
+# Unterscheidung lump vs ring beim Treiben herausnehmen
+df$Typ <- as.character(df$Typ)
+df$Typ[df$Typ == "Modelling from a lump"] <- "Modelling from a lump/ring"
+df$Typ[df$Typ == "Modelling from a ring"] <- "Modelling from a lump/ring"
+```
+
+```{r}
+unique(df$Typ)
+```
+
+```{r}
+drost1967 <- read.csv('../../02_Documents/01_Archaeology/Afrika/Allg/Drost1967/Drost1967.csv')
+head(drost1967)
+```
+
+```{r}
+# Techniken?
+unique(drost1967$Technik)
+```
+
+```{r}
+# Bezeichnunge für die Techniken austauschen
+drost1967$Typ[drost1967$Technik == "Treiben"] <- "Modelling from a lump/ring"
+drost1967$Typ[drost1967$Technik == "Schlagtreiben"] <- "Molding in a concave mold (negative)"
+drost1967$Typ[drost1967$Technik == "Abformen"] <- "Molding over a convex mold (positive)"
+drost1967$Typ[drost1967$Technik == "Wulsten"] <- "Coiling"
+
+head(drost1967)
+```
+
+```{r}
+df <- smartbind(df, drost1967)
+```
+
+```{r}
+qmap("Boende", zoom = 5, maptype = 'hybrid') + 
+#  geom_point(aes(x = X, y = Y, shape = Typ), data = df, size = 4) + 
+  geom_point(aes(x = X, y = Y, shape = Typ, fill = Typ), data = df, size = 6) + 
+  scale_shape_manual(values=c(21, 22, 24, 25)) + 
+#  geom_rect(data = TextFrame, aes(xmin = X - w/0.75, xmax = X + w/0.75, ymin = Y - h/1, ymax = Y + h/1), fill = "white", inherit.aes = FALSE) + 
+  geom_text(aes(x = X + 1.3, y = Y + 0.2, label = Name), data = df, size = 5, fontface = 'bold', color = 'white') + 
+  theme(legend.justification=c(0,0), 
+        legend.position=c(0,0), 
+        axis.ticks = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+ggsave("../output/figs/4_Keramikherstellung_Map.pdf", width = 11, height = 11)
+ggsave("../output/figs/4_Keramikherstellung_Map.eps", width = 11, height = 11)
+```
+
+```{r}
+#write.csv(df, "../output/data/4_Keramikherstellung_Map.csv")
+# Datei verändert und in QGIS bearbeitet (DS, 12.05.2017)
+```
+
+
+```{r}
+qmap("Boende", zoom = 5, maptype = 'hybrid') + 
+#  geom_point(aes(x = X, y = Y, shape = Typ), data = df, size = 4) + 
+  geom_point(aes(x = X, y = Y, shape = Typ, fill = Typ), data = df, size = 6) + 
+  scale_shape_manual(values=c(21, 22, 24, 25)) + 
+#  geom_rect(data = TextFrame, aes(xmin = X - w/0.75, xmax = X + w/0.75, ymin = Y - h/1, ymax = Y + h/1), fill = "white", inherit.aes = FALSE) + 
+  geom_text(aes(x = X + 1.3, y = Y + 0.2, label = Name), data = df, size = 5, fontface = 'bold', color = 'white') + 
+  theme(legend.justification=c(0,1),
+        legend.position=c(1,1), 
+        axis.ticks = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+ggsave("../output/figs/4_Keramikherstellung_Map2.pdf", width = 15, height = 11)
+ggsave("../output/figs/4_Keramikherstellung_Map2.eps", width = 15, height = 11)
+```
+
+### Langlois 2001
+
+```{r}
+qmap("Bongor", zoom = 7, maptype = 'hybrid') + 
+  #  geom_point(aes(x = X, y = Y, shape = Typ), data = df, size = 4) + 
+  geom_point(aes(x = X, y = Y, shape = Typ, fill = Typ), data = df, size = 6) +
+  scale_shape_manual(values=c(22, 23, 24, 25, 21)) + 
+  #  geom_rect(data = TextFrame, aes(xmin = X - w/0.75, xmax = X + w/0.75, ymin = Y - h/1, ymax = Y + h/1), fill = "white", inherit.aes = FALSE) + 
+  geom_text(aes(x = X + 2, y = Y + 0.5, label = Name), data = df, size = 5, fontface = 'bold', color = 'black') + 
+  theme(legend.justification=c(1,0), 
+        legend.position=c(1,0), 
+        axis.ticks = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+ggsave("../output/figs/4_Keramikherstellung_Langlois2011_Map.pdf", width = 11, height = 11)
+```
+
+# Makrospuren-Korrespondenzhanalyse
+Kreuztabelle in Python erzeugt
+
+```{r}
+#df_pivot <- read.csv("../data/processed/4_macrotraces.csv", row.names = 1)
+# Tabelle für CA ausnullen
+df_pivot[is.na(df_pivot)] <- 0
+head(df_pivot)
+```
+
+```{r}
+par(mfrow = c(1, 2))
+plot(ca(df_pivot))
+title(sub = "1. und 2. Hauptachse")
+plot(ca(df_pivot), dim = c(2, 3))
+title(sub = "2. und 3. Hauptachse")
+p <- recordPlot()
+```
+
+```{r}
+pdf("../output/figs/4_macrotraces_CA.pdf", width = 12, height = 6, useDingbats=FALSE)
+replayPlot(p)
+dev.off()
+```
+
+
+```{r}
+# alle GE
+df = dbGetQuery(con, "SELECT
+           t_Obj.objID,
+           t_Obj.Typ
+       FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID)
+           INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+       WHERE (((t_Ort.ort_lit)='DS')
+          AND ((t_Obj.Typ) != '')
+          AND ((t_Obj.Anzahl) = 1))")
+
+# (?) und alles nach / entfernen
+df$Typ <- gsub("\\/.*", "", df$Typ)
+df$Typ <- gsub("\\ .*", "", df$Typ)
+
+# Absolute Datierungen
+chron <- read.csv("../lit/Wotzka1995_StilGrKuerzel.csv", encoding = 'latin1')
+# Mittelwert für Datierungsspanne
+chron$MEAN <- (chron$TO + chron$FROM) / 2
+# Länge der Datierungsspanne für weite des Jitter
+chron$LEN <- (chron$TO - chron$FROM)
+
+sort <- chron[, c('Typ', 'Seidensticker')]
+sort
+
+#df_a$variable <- as.character(df_a$variable)
+#df_a$variable <- factor(df_a$variable, levels = unique(df_a$variable), ordered = TRUE)
+
+all <- merge(x = df, y = chron[, c('Typ', 'MEAN', 'LEN')], by = 'Typ')
+all
+
+
+mean.sort <- all[, c('Typ', 'MEAN')]
+mean.sort <- mean.sort[!duplicated(mean.sort), ]
+mean.sort <- mean.sort[order(mean.sort$MEAN), ]
+mean.sort <- as.character(mean.sort)
+mean.sort <- factor(mean.sort, levels = unique(mean.sort), ordered = TRUE)
+mean.sort
+
+
+# GE mit Herstellungstechnik
+df_sel <- read.csv("../01_ToDo/Potteryprod_Obj.csv", encoding = 'latin1')
+
+keep <- c(df_sel$objID)
+sel <- all[all$objID %in% keep, ]
+
+sel <- merge(x = sel, y = df_sel)
+```
+
+```{r}
+# Sortieurng nach dem mittleren Alter der Stilgruppen
+all$Typ <- factor(all$Typ, levels = all[order(all$MEAN, decreasing = FALSE),]$Typ)
+
+ggplot() + 
+  geom_point(data = all, 
+             aes(x = MEAN, 
+                 y = Typ), 
+             position = position_jitter(w = all$LEN/2, h = 0.25),
+             shape = 21, 
+             fill = '#efefef') + 
+  geom_point(data = sel, 
+             aes(x = MEAN, 
+                 y = Typ, 
+                 fill = Option), 
+             position = position_jitter(w = sel$LEN/2, h = 0.25),
+             shape = 21, 
+             size = 3) + 
+  scale_fill_manual(values=c(" " = "#000000", "A" = "#f8766d", "A/B" = "#a2a302", "B" = "#00bf7d","C" = "#00b0f6")) + 
+  theme_bw()
+```
+
+
+

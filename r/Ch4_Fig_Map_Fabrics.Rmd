@@ -89,6 +89,14 @@ df_pivot <- df_pivot[rowSums(df_pivot[, 4:12]) >= 5,]
 
 siehe 1_Einleitung.Rmd
 
+
+```{r}
+ggplot() + 
+  geom_scatterpie(data = df_pivot, aes(x = X, y = Y, r = 0.05),
+                  cols = seq(1:9))
+```
+
+
 ```{r}
 g1 <- ggplot() + 
   #geom_tile(data = DEM.df, aes(x = x, y = y, alpha = value)) + 

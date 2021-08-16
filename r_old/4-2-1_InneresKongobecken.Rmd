@@ -1,0 +1,145 @@
+---
+title: "4-2-1_InneresKongobecken"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(RSQLite)
+library(vegan)
+
+source("myfunctions.R")
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+## %-Anteile von in Grabungen erfassten GE je Stilgruppe
+
+```{r}
+df <- read.csv("../lit/Wotzka1995_StilGrKuerzel.csv", dec = ",")
+
+a <- df[, c("Typ", "PctExcavation")]
+a <- na.omit(a)
+a <- a[order(a$PctExcavation), ]
+
+a$Typ <- factor(a$Typ, levels=unique(a$Typ))
+
+mean(a$PctExcavation)
+```
+
+```{r}
+ggplot(a, aes(Typ, PctExcavation)) + 
+  geom_bar(stat = "identity")
+```
+
+
+
+
+
+
+
+# Datierungen Wotzka 1995
+
+## Vierfeldertest
+
+```{r}
+df <- read.csv('../lit/Wotzka1995_14C-Repres_Vierfelder.csv', row.names = 1, encoding = 'UTF-8')
+df
+```
+
+```{r}
+chisq.test(df)
+```
+
+```{r}
+chisq.test(df)$expected # Erwartungswerte
+```
+
+```{r}
+chisq.test(df)$residuals # Residuen (Abweichung vom Erwartungswert)
+```
+
+```{r}
+fisher.test(df)
+```
+
+# Korrespondenzanalyse - Gefäßtypen / Stilgruppen
+
+## Wotzka Original:
+
+```{r}
+HPWorig <- read.csv("../data/processed/Wotzka1995_GefFormen_Pivot.csv", row.names = 1)
+HPWorig[is.na(HPWorig)] <- 0
+
+HPWorig[HPWorig > 0] <- 1 # reine An-/Abwesenheiten
+
+HPWorig.ca <- cca(HPWorig)
+
+# evplot(HPWorig.ca$CA$eig)
+
+plot(HPWorig.ca, main = "Wotzka 1995 Orig")
+```
+
+## Wotzka Neu (auf eigene Gef-Typen gemappt):
+
+```{r}
+HPWneu <- read.csv("../data/processed/Wotzka1995_GefFormen_Pivot_mapDS.csv", row.names = 1)
+HPWneu[is.na(HPWneu)] <- 0
+
+HPWneu[HPWneu > 0] <- 1 # reine An-/Abwesenheiten
+
+HPWneu.ca <- cca(HPWneu)
+
+#evplot(HPWneu.ca$CA$eig)
+
+plot(HPWneu.ca, main = "Wotzka 1995 Neu")
+```
+
+## Seidensticker (nwCongo):
+
+```{r}
+DS <- read.csv("../data/processed/Wotzka1995_GefFormen_Pivot_Seidensticker.csv", row.names = 1)
+DS[is.na(DS)] <- 0
+
+DS[DS > 0] <- 1 # reine An-/Abwesenheiten
+
+DS.ca <- cca(DS)
+
+evplot(DS.ca$CA$eig)
+
+plot(DS.ca, main = "Seidensticker")
+```
+
+## Kombination Wotzka 1995 NEU und Seidensticker (nwCOngo)
+
+```{r}
+DS.HPWneu <- read.csv("../data/processed/Wotzka1995_GefFormen_Pivot_ALL.csv", row.names = 1)
+DS.HPWneu[is.na(DS.HPWneu)] <- 0
+
+DS.HPWneu[DS.HPWneu > 0] <- 1 # reine An-/Abwesenheiten
+
+DS.HPWneu.ca <- cca(DS.HPWneu)
+
+evplot(DS.HPWneu.ca$CA$eig)
+
+plot(DS.HPWneu.ca, main = "Seidensticker")
+```
+
+## Klassen aus Clusteranalyse in CA
+
+nach Borcard u.a. 2011: S. 127
+```{r}
+spe <- DS.HPWneu
+
+spe.w <- hclust(dist(scale(spe)), "ward")
+
+gr <- cutree(spe.w, k = 4)
+grl <- levels(factor(gr))
+
+
+```
+
+
+
+

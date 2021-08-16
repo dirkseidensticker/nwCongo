@@ -1,0 +1,367 @@
+---
+title: "Kat.-Nr. 15 MUN 87/1"
+output: html_notebook
+---
+
+# MUN 87/11
+
+```{r}
+library(ca)
+library(ggplot2)
+library(grid)
+library(RColorBrewer)
+library(reshape2)
+library(plyr)
+library(RSQLite)
+library(sqldf)
+library(viridis)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+## Fachdaten
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           t_Obj.ort_kurz, 
+           t_Obj.Komplex, 
+           t_Obj.Individuum, 
+           t_Obj.Typ, 
+           t_Obj.Schlacke_Typ,
+           t_Obj.Anzahl,
+           t_Obj.Gewicht,
+           t_Obj.Gr_Clist, 
+           t_Obj.Fabric,
+           t_Obj.Art,
+           t_Obj.Tiefe,
+           t_Obj.Notiz
+       FROM t_Obj 
+       WHERE (((t_Obj.ort_kurz) = 'MUN')
+           AND ((t_Obj.Komplex) LIKE '%87/1%'))")
+
+df$Tiefe <- as.numeric(df$Tiefe)
+
+# alles hinter der zweiten Stelle weg
+df$Fabric <- substr(df$Fabric, 0, 2)
+# nur grober Typ (alle Buchstaben raus):
+df$Fabric <- gsub("[^0-9]", "", df$Fabric)
+
+# Datensätze ohne Tiefenangabe raus
+df <- df[!(is.na(df$Tiefe)),]
+
+df
+```
+
+```{r}
+with(df, tapply(Gewicht, list(Art), sum))
+```
+
+```{r}
+sum(df$Gewicht)
+```
+
+
+## Art
+
+```{r}
+df_pivot <- data.frame(dcast(df, Komplex + Tiefe ~ Art, 
+                             value.var = "Gewicht", 
+                             fun.aggregate = sum))
+
+df_pivot <- df_pivot[-1,]
+df_pivot
+```
+
+```{r}
+df_melt <- melt(df_pivot, id.vars = c("Komplex", "Tiefe"))
+df_melt$Tiefe <- as.numeric(df_melt$Tiefe)
+df_melt
+```
+
+```{r}
+cols <- read.csv("../data/colPalette/ArtCol.csv")
+
+types <- as.data.frame(unique(df_melt$variable))
+colnames(types) <- c("Typ")
+
+types <- merge(x = types, y = cols, by.x = "Typ", by.y = "Art")
+
+#types <- types[order(as.character(types$Label)), ]
+
+types
+```
+
+```{r}
+s <- rev(factor(unique(c(paste(df_melt$Komplex, df_melt$Tiefe)))))
+s <- as.character(s)
+s1 <- sapply(strsplit(s, split=' ', fixed=TRUE), function(x) (x[2]))
+
+t1 = textGrob("MUN 87/1-0-1")
+t2 = textGrob("MUN 87/1-0-2")
+
+p <- ggplot(df_melt, aes(rev(factor(paste(df_melt$Komplex, df_melt$Tiefe))), 
+                    value, 
+                    fill = factor(variable))) + 
+    geom_bar(stat = "identity", color = 'black', size = 0.25, width = 0.5) + 
+    coord_flip() + 
+    scale_x_discrete("Tiefe [cm]", labels = s1) + 
+  #scale_x_discrete("Tiefe [cm]", labels = rev(factor(unique(c(paste(df_melt$Komplex, df_melt$Tiefe)))))) + 
+    scale_y_continuous("Gewicht [g]", expand = c(0, 0), limits = c(0, 6050)) +
+    scale_fill_manual(values = paste(types$col),
+                      label = types$Label, 
+                      name = "Material") + 
+    geom_vline(xintercept = 7.5 , colour = "#808080", linetype = 2) + 
+    theme_bw() + 
+    theme(legend.justification = c(1, 1), 
+          legend.position = c(.99, .99), 
+          #panel.grid.major.x = element_blank(),
+          panel.grid.major.y = element_blank(), 
+          plot.margin = unit(c(1,8,1,1), "lines"))
+
+
+p1 <- p + annotation_custom(grob = t1, 
+                            xmin = 9.1, xmax = 9.1, ymin = 6200, ymax = 7300) + 
+  annotation_custom(grob = linesGrob(), xmin = 7.6, xmax = 7.6, ymin = 6100, ymax = 6250) +
+    annotation_custom(grob = linesGrob(), xmin = 10.5, xmax = 10.5, ymin = 6100, ymax = 6250) +
+    annotation_custom(grob = linesGrob(), xmin = 7.6, xmax = 10.5, ymin = 6250, ymax = 6250)
+
+p1 <- p1 + annotation_custom(grob = t2, 
+                            xmin = 4.25, xmax = 4.25, ymin = 6200, ymax = 7300) + 
+  annotation_custom(grob = linesGrob(), xmin = 0.5, xmax = 0.5, ymin = 6100, ymax = 6250) +
+    annotation_custom(grob = linesGrob(), xmin = 7.4, xmax = 7.4, ymin = 6100, ymax = 6250) +
+    annotation_custom(grob = linesGrob(), xmin = 0.5, xmax = 7.4, ymin = 6250, ymax = 6250)
+
+# Code to override clipping
+gt <- ggplot_gtable(ggplot_build(p1))
+gt$layout$clip[gt$layout$name=="panel"] <- "off"
+
+ggsave("../output/figs/9-12_MUN87-1_VerteilungFunde_R.pdf", width = 10, height = 3, gt)
+```
+
+## Fabrics
+
+```{r}
+df_pivot <- data.frame(dcast(df, Komplex + Tiefe ~ Fabric, 
+                             value.var = "Gewicht", 
+                             fun.aggregate = sum))
+df_pivot <- df_pivot[-1,]
+# rownames(df_pivot) <- df_pivot$Tiefe
+df_pivot <- df_pivot[c("Komplex", "Tiefe", "X1", "X2")]
+# Dummy 8. & 9.-Spalte mit 0 gefüllt erzeugen
+head(df_pivot)
+```
+
+```{r}
+df_melt <- melt(df_pivot, id.vars = c("Komplex", "Tiefe"))
+# df_melt$value <- df_melt$value / 1000
+df_melt$Tiefe <- as.numeric(df_melt$Tiefe)
+head(df_melt)
+```
+
+```{r}
+s <- rev(factor(unique(c(paste(df_melt$Komplex, df_melt$Tiefe)))))
+s <- as.character(s)
+s1 <- sapply(strsplit(s, split=' ', fixed=TRUE), function(x) (x[2]))
+
+t1 = textGrob("MUN 87/1-0-1")
+t2 = textGrob("MUN 87/1-0-2")
+
+p <- ggplot(df_melt, aes(rev(factor(paste(df_melt$Komplex, df_melt$Tiefe))), 
+                    value, 
+                    fill = factor(variable))) + 
+    geom_bar(stat = "identity", color = 'black', size = 0.25, width = 0.5) + 
+    coord_flip() + 
+    scale_x_discrete("Tiefe [cm]", labels = s1) + 
+    scale_y_continuous("Gewicht [g]", expand = c(0, 0), limits = c(0, 3800)) +
+    scale_fill_manual(values = c("#e41a1c", "#FF7F00"), 
+                      name = "Fabrics", 
+                      label = c(1, 2, 3, 4, 5, 6, 7, 8, 9)) + 
+    geom_vline(xintercept = 7.5 , colour = "#808080", linetype = 2) + 
+    theme_bw() + 
+    theme(legend.justification = c(1, 1), 
+          legend.position = c(.99, .99), 
+          panel.grid.major.y = element_blank(),
+          plot.margin = unit(c(1,8,1,1), "lines"))
+
+p1 <- p + annotation_custom(grob = t1, 
+                            xmin = 9.1, xmax = 9.1, ymin = 4100, ymax = 4400) + 
+  annotation_custom(grob = linesGrob(), xmin = 7.6, xmax = 7.6, ymin = 3850, ymax = 3950) +
+    annotation_custom(grob = linesGrob(), xmin = 10.5, xmax = 10.5, ymin = 3850, ymax = 3950) +
+    annotation_custom(grob = linesGrob(), xmin = 7.6, xmax = 10.5, ymin = 3950, ymax = 3950)
+
+p1 <- p1 + annotation_custom(grob = t2, 
+                            xmin = 4.25, xmax = 4.25, ymin = 4100, ymax = 4400) + 
+  annotation_custom(grob = linesGrob(), xmin = 0.5, xmax = 0.5, ymin = 3850, ymax = 3950) +
+    annotation_custom(grob = linesGrob(), xmin = 7.4, xmax = 7.4, ymin = 3850, ymax = 3950) +
+    annotation_custom(grob = linesGrob(), xmin = 0.5, xmax = 7.4, ymin = 3950, ymax = 3950)
+
+# Code to override clipping
+gt <- ggplot_gtable(ggplot_build(p1))
+gt$layout$clip[gt$layout$name=="panel"] <- "off"
+
+ggsave("../output/figs/9-12_MUN87-1_Fabrics_R.pdf", width = 10, height = 3, gt)
+```
+
+## Stilgruppe/Typ
+
+```{r}
+df_pivot <- data.frame(dcast(df, Komplex + Tiefe ~ Typ, 
+                             value.var = "Gewicht", 
+                             fun.aggregate = sum, 
+                             subset = .(!is.na(Typ))))
+
+
+# dummy-Werte für die beiden Abträge in MUN 87/1-0-1
+df_pivot <- rbind(df_pivot, data.frame(Komplex="87/1-0-1", Tiefe=20, EBA=0, EBA....=0, KON....=0, PKM....=0))
+df_pivot <- rbind(df_pivot, data.frame(Komplex="87/1-0-1", Tiefe=40, EBA=0, EBA....=0, KON....=0, PKM....=0))
+
+df_pivot <- df_pivot[order(df_pivot$Komplex, df_pivot$Tiefe),]
+
+df_pivot
+```
+
+```{r}
+df_melt <- melt(df_pivot, id.vars = c("Komplex", "Tiefe"))
+# df_melt$value <- df_melt$value / 1000
+df_melt$Tiefe <- as.numeric(df_melt$Tiefe)
+
+df_melt$rel <- FALSE
+df_melt$rel[nchar(as.character(df_melt$variable)) <= 3] <- TRUE
+
+head(df_melt)
+```
+
+```{r}
+cols <- read.csv("../lit/Wotzka1995_StilGrKuerzel.csv")
+cols <- cols[,c("Farbe", "Typ")]
+
+types <- as.data.frame(unique(df_melt$variable))
+colnames(types) <- c("Typ")
+
+types$TypEinfach <- substr(types$Typ, 1, 3)
+types <- merge(x = types, y = cols, by.x = "TypEinfach", by.y = "Typ")
+
+types
+```
+
+```{r}
+s <- rev(factor(unique(c(paste(df_melt$Komplex, df_melt$Tiefe)))))
+s <- as.character(s)
+s1 <- sapply(strsplit(s, split=' ', fixed=TRUE), function(x) (x[2]))
+
+t1 = textGrob("MUN 87/1-0-1")
+t2 = textGrob("MUN 87/1-0-2")
+
+p <- ggplot(df_melt, aes(rev(factor(paste(df_melt$Komplex, df_melt$Tiefe))), 
+                    value, 
+                    fill = factor(variable),
+                    alpha = rel)) + 
+    geom_bar(stat = "identity", color = 'black', size = 0.25, width = 0.5) + 
+    coord_flip() + 
+    scale_x_discrete("Tiefe [cm]", labels = c(rev(df_melt$Tiefe))) + 
+    scale_y_continuous("Gewicht [g]", expand = c(0, 0), limits = c(0, 4200)) +
+    #scale_fill_brewer(palette="Set1") + 
+    scale_fill_manual(values = paste("#", types$Farbe, sep = ''),
+                      name = "Stilgruppe") +
+    scale_alpha_discrete(range = c(0.5, 1), guide=FALSE) + 
+    geom_vline(xintercept = 7.5 , colour = "#808080", linetype = 2) + 
+    theme_bw() + 
+    theme(legend.justification = c(1, 1), 
+          legend.position = c(.99, .99), 
+          panel.grid.major.y = element_blank(),
+          plot.margin = unit(c(1,8,1,1), "lines"))
+
+p1 <- p + annotation_custom(grob = t1, 
+                            xmin = 9.1, xmax = 9.1, ymin = 4300, ymax = 5150) + 
+  annotation_custom(grob = linesGrob(), xmin = 7.6, xmax = 7.6, ymin = 4250, ymax = 4350) +
+    annotation_custom(grob = linesGrob(), xmin = 10.5, xmax = 10.5, ymin = 4250, ymax = 4350) +
+    annotation_custom(grob = linesGrob(), xmin = 7.6, xmax = 10.5, ymin = 4350, ymax = 4350)
+
+p1 <- p1 + annotation_custom(grob = t2, 
+                            xmin = 4., xmax = 4., ymin = 4300, ymax = 5150) + 
+  annotation_custom(grob = linesGrob(), xmin = 0.5, xmax = 0.5, ymin = 4250, ymax = 4350) +
+    annotation_custom(grob = linesGrob(), xmin = 7.4, xmax = 7.4, ymin = 4250, ymax = 4350) +
+    annotation_custom(grob = linesGrob(), xmin = 0.5, xmax = 7.4, ymin = 4350, ymax = 4350)
+
+# Code to override clipping
+gt <- ggplot_gtable(ggplot_build(p1))
+gt$layout$clip[gt$layout$name=="panel"] <- "off"
+
+ggsave("../output/figs/9-12_MUN87-1_KeramikStilgruppen_R.pdf", width = 10, height = 3, gt)
+```
+
+
+## Schlacken
+
+```{r}
+df_pivot <- data.frame(dcast(df, Komplex + Tiefe ~ Schlacke_Typ, 
+                             value.var = "Gewicht", 
+                             fun.aggregate = sum))
+df_pivot <- df_pivot[c("Komplex", "Tiefe", "X1a", "X2a", "X2b", "X4a", "X4b", "X6")]
+df_pivot <- df_pivot[-1,]
+df_pivot
+```
+
+```{r}
+df_melt <- melt(df_pivot, id.vars = c("Komplex", "Tiefe"))
+df_melt$Tiefe <- as.numeric(df_melt$Tiefe)
+df_melt
+```
+
+```{r}
+cols <- read.csv("../data/colPalette/SchlackeCol.csv")
+
+types <- as.data.frame(unique(df_melt$variable))
+colnames(types) <- c("Typ")
+
+types <- merge(x = types, y = cols, by.x = "Typ", by.y = "Schlacke_Typ")
+
+types
+```
+
+```{r}
+s <- rev(factor(unique(c(paste(df_melt$Komplex, df_melt$Tiefe)))))
+s <- as.character(s)
+s1 <- sapply(strsplit(s, split=' ', fixed=TRUE), function(x) (x[2]))
+
+t1 = textGrob("MUN 87/1-0-1")
+t2 = textGrob("MUN 87/1-0-2")
+
+p <- ggplot(df_melt, aes(rev(factor(paste(df_melt$Komplex, df_melt$Tiefe))), 
+                    value, 
+                    fill = factor(variable))) + 
+    geom_bar(stat = "identity", color = 'black', size = 0.25, width = 0.5) + 
+    coord_flip() + 
+    scale_x_discrete("Tiefe [cm]", labels = c(rev(df_melt$Tiefe))) + 
+    scale_y_continuous("Gewicht [g]", expand = c(0, 0), limits = c(0, 4600)) +
+    #scale_fill_brewer(palette="Set1") + 
+    scale_fill_manual(values = paste(types$col),
+                      label = types$Label, 
+                      name = "Typ") +
+    scale_alpha_discrete(range = c(0.5, 1), guide=FALSE) + 
+    geom_vline(xintercept = 7.5 , colour = "#808080", linetype = 2) + 
+    theme_bw() + 
+    theme(legend.justification = c(1, 0), 
+          legend.position = c(.99, .01), 
+          panel.grid.major.y = element_blank(),
+          plot.margin = unit(c(1,8,1,1), "lines"))
+
+p1 <- p + annotation_custom(grob = t1, 
+                            xmin = 9.1, xmax = 9.1, ymin = 5000, ymax = 5300) + 
+  annotation_custom(grob = linesGrob(), xmin = 7.6, xmax = 7.6, ymin = 4670, ymax = 4770) +
+    annotation_custom(grob = linesGrob(), xmin = 10.5, xmax = 10.5, ymin = 4670, ymax = 4770) +
+    annotation_custom(grob = linesGrob(), xmin = 7.6, xmax = 10.5, ymin = 4770, ymax = 4770)
+
+p1 <- p1 + annotation_custom(grob = t2, 
+                            xmin = 4., xmax = 4., ymin = 5000, ymax = 5300) + 
+  annotation_custom(grob = linesGrob(), xmin = 0.5, xmax = 0.5, ymin = 4670, ymax = 4770) +
+    annotation_custom(grob = linesGrob(), xmin = 7.4, xmax = 7.4, ymin = 4670, ymax = 4770) +
+    annotation_custom(grob = linesGrob(), xmin = 0.5, xmax = 7.4, ymin = 4770, ymax = 4770)
+
+# Code to override clipping
+gt <- ggplot_gtable(ggplot_build(p1))
+gt$layout$clip[gt$layout$name=="panel"] <- "off"
+
+ggsave("../output/figs/9-12_MUN87-1_Schlacken_R.pdf", width = 10, height = 3, gt)
+```

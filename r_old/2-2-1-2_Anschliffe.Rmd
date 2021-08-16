@@ -1,0 +1,49 @@
+---
+title: "2-2-1-2_Anschliffe"
+output: html_notebook
+---
+
+```{r}
+# http://www.bioconductor.org/packages/release/bioc/html/EBImage.html
+#source("https://bioconductor.org/biocLite.R")
+#biocLite()
+#biocLite("EBImage")
+library(EBImage)
+```
+
+```{r}
+# https://alstatr.blogspot.de/2014/09/r-image-analysis-using-ebimage.html
+
+a <- readImage("../misc/Systematik/Fabrics/Prof/OUE87-102-49_2cm.jpg")
+
+a1 <- a * 5
+
+print(a)
+
+
+image(a1)
+```
+
+```{r}
+library(imager, verbose = F)
+library(raster)
+```
+
+```{r}
+a <- load.image("../misc/Systematik/Fabrics/Prof/DON85-102-1_2cm.jpg")
+plot(a)
+```
+
+
+```{r}
+# in greyscale die blob detection durchführen
+
+
+
+Hdet <- with(imhessian(a),(xx*yy - xy^2))
+Hdet[is.na(Hdet)] <- 0
+
+plot(Hdet)
+
+```
+

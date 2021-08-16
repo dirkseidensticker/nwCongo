@@ -1,0 +1,138 @@
+---
+title: 'Maley 2001 7: Abb. 4'
+author: "Dirk Seidensticker"
+date: "`r format(Sys.time(), ''%d %B %Y'')`"
+output: html_notebook
+---
+
+```{r results='hide', message=FALSE, warning=FALSE}
+library(ggplot2)
+library(reshape2)
+library(rgdal)
+library(rgeos)
+library(RSQLite)
+library(sp)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+# Geodaten
+
+```{r}
+epsg <- 4326
+crs.prj <- paste("+init=epsg:",epsg,"", sep="")
+
+
+forest <- readOGR(dsn = "../lit", layer = "Maley200_7Abb4", verbose = FALSE)
+poly <-spTransform(forest, CRS(crs.prj)) 
+
+
+```
+
+# Fachdaten
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           t_Obj.objID,
+           t_Ort.ort_name,
+           t_Ort.x_long AS X, 
+           t_Ort.y_lat AS Y, 
+           t_Obj.Typ
+       FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID)
+         INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+       WHERE (((t_Ort.y_lat) <> '') 
+         AND ((t_Obj.Typ) != '')
+         AND ((t_Obj.Typ) Not Like '%/%')
+         AND ((t_Obj.Typ) Not Like '%(?)%')
+         AND ((t_Ort.ort_lit) Like '%DS%'))")
+
+df_pivot <- dcast(df, ort_name + X + Y ~ Typ, 
+                  value.var = "objID",
+                  fun.aggregate = length)
+
+dict <- unique(df$Typ)
+
+d = data.frame( SITE = rep(0, length(dict)), 
+                YES = rep(0, length(dict)), 
+                NO = rep(0, length(dict)))
+
+for(i in 1:length(dict)){
+  # selecting only sites of the given type (stylegroup)
+  pts.sel <- df_pivot[df_pivot[,paste(dict[i])] != 0,]
+  
+  # converting input df of points into SpatialPointsDataFrame
+  coords = cbind(pts.sel$X, pts.sel$Y)
+  data <- data.frame(pts.sel$ort_name)
+  spdf = SpatialPointsDataFrame(coords, data)
+  proj4string(spdf) <- CRS("+proj=longlat +datum=WGS84")
+  pts <- spTransform(spdf, CRS(crs.prj)) 
+  
+  pts.over <- !is.na(over(pts, as(poly, "SpatialPolygons")))
+  
+  d[i, ] = c(dict[i], 
+             length(pts.over[pts.over==TRUE]),
+             length(pts.over[pts.over==FALSE]))
+}
+
+d <- as.data.frame(d)
+#rownames(d) <- d$SITE
+#d$SITE <- NULL
+d
+```
+
+```{r}
+d.long <- melt(d, id.vars = "SITE")
+d.long$value <- as.numeric(d.long$value)
+
+ggplot(d.long, aes(x=variable, y=value, fill = variable)) + 
+  geom_bar(stat="identity", color = 'black') + 
+#  scale_fill_manual(values = c("green", "yellow")) + 
+  scale_fill_manual(values = c("#00a064", "#e8da6d")) + 
+  facet_wrap(~ SITE, scales = "free_y") + 
+  theme_classic()
+```
+
+## Early Iron Age 1--2 (400 v. Chr. -- 0)
+
+> nur EIA-Gruppen so betrachten:
+  * BTM
+  * NGB
+  * PKM
+  * BOG
+  * (IMB)
+  * (Bonkake)
+  * (Ingende)
+  * (Inganda)
+
+```{r}
+rownames(d) <- d$SITE
+#d$SITE <- NULL
+
+d.eia1 <- d[c("BTM", "NGB", "PKM", "BOG"),]
+
+# styles <- read.csv("../lit/Wotzka1995_StilGrKuerzel.csv")
+
+# merge(x = d.eia1, y = styles, 
+#       by.x = d.eia1$SITE, by.y = styles$Typ)
+
+
+d.eia1
+```
+
+```{r}
+d.eia1.long <- melt(d.eia1, id.vars = "SITE")
+d.eia1.long$value <- as.numeric(d.eia1.long$value)
+
+ggplot(d.eia1.long, aes(x=variable, y=value, fill = variable)) + 
+  geom_bar(stat="identity", color = 'black') + 
+#  scale_fill_manual(values = c("green", "yellow")) + 
+  scale_fill_manual(values = c("#00a064", "#e8da6d")) + 
+  facet_wrap(~ SITE, scales = "free_y") + 
+  theme_classic()
+```
+
+> evtl. gleiche Betrachtung für Bantu-Sprachen
+
+> für LIA-Gruppen die rezente Vegetaion nutzen: Mayaux et al. 2003 >> getValues von Raster!
+

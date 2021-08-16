@@ -1,0 +1,37 @@
+---
+title: "3.2.4 Kamerun"
+output: html_notebook
+---
+
+```{r}
+library(ca)
+library(DiagrammeR)
+library(gplots)
+library(ggplot2)
+library(ggmap)
+library(gtools)
+library(reshape2)
+library(sqldf)
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+
+# Nlend Nlend 2013/2014
+
+## S. 257 Tab. 44
+
+Leerfelder in 0
+
+```{r}
+df <- read.csv("../lit/NlendNlend20132014_257Tab44.csv")
+df
+```
+
+ggplot der %-Anteile:
+
+```{r}
+
+```
+

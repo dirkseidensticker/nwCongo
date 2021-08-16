@@ -1,0 +1,92 @@
+---
+title: "Kat.-Nr. 14 BLK 87/1"
+output: html_notebook
+---
+
+# BLK 87/1
+
+```{r}
+library(ca)
+library(ggplot2)
+library(RColorBrewer)
+library(reshape2)
+library(plyr)
+library(RSQLite)
+library(sqldf)
+library(viridis)
+
+source("myfunctions.R")
+
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, "../data/CongoDB.sqlite")
+```
+
+## Fachdaten
+
+```{r}
+df = dbGetQuery(con, "SELECT
+           t_Obj.ort_kurz, 
+           t_Obj.Komplex, 
+           t_Obj.Individuum, 
+           t_Obj.Typ, 
+           t_Obj.Anzahl,
+           t_Obj.Gewicht,
+           t_Obj.Gr_Clist, 
+           t_Obj.Fabric,
+           t_Obj.Art,
+           t_Obj.Tiefe,
+           t_Obj.Notiz
+       FROM t_Obj 
+       WHERE (((t_Obj.ort_kurz) = 'BLK')
+           AND ((t_Obj.Komplex) LIKE '%87/1-%'))")
+df
+```
+
+## Art
+
+```{r}
+df_pivot <- data.frame(dcast(df, Komplex ~ Art, 
+                             value.var = "Gewicht", 
+                             fun.aggregate = sum))
+head(df_pivot)
+```
+
+```{r}
+df_melt <- melt(df_pivot, id.vars = "Komplex")
+head(df_melt)
+```
+
+```{r}
+cols <- read.csv("../data/colPalette/ArtCol.csv")
+
+types <- as.data.frame(unique(df_melt$variable))
+colnames(types) <- c("Typ")
+
+types <- merge(x = types, y = cols, by.x = "Typ", by.y = "Art")
+
+types
+```
+
+
+```{r}
+ggplot(df_melt, aes(factor(Komplex), 
+                    value, 
+                    fill = factor(variable))) + 
+    geom_bar(stat = "identity", color = 'black', size = 0.25, width = 0.5) + 
+    #coord_flip() + 
+    scale_x_discrete(labels = c(paste("BLK", df_melt$Komplex))) + 
+    scale_y_continuous("Gewicht [g]", expand = c(0, 0), limits = c(0, 5500)) +
+    scale_fill_manual(values = paste(types$col),
+                      label = types$Label, 
+                      name = "Material") + 
+    theme_bw() + 
+    theme(panel.grid.major.x = element_blank(), 
+          panel.grid.minor.y = element_blank(),
+          axis.title.x=element_blank())
+#ggsave("../output/figs/9-11_BLK87-1_VerteilungFunde_R.pdf", width = 10, height = 4.3)
+ggsave("../output/figs/9-11_BLK87-1_VerteilungFunde_R.pdf", width = 5, height = 2.5)
+```
+
+
+
+

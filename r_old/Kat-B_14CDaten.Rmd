@@ -1,0 +1,21 @@
+---
+title: "Radiokohlenstoffdatierungen & aDRAC"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+data <- read.csv("../../dev/dirkseidensticker/aDRAC/data/aDRAC.csv")
+data
+```
+
+Anzahl der 14C-Datierungen aus dem in Kap. 5.5 beschriebenen Gebiet
+
+```{r}
+filter(data, LAT < 6 & LAT > -2 & LONG > 15 & LONG < 26)
+```
+

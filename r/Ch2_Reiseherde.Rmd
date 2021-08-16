@@ -1,0 +1,102 @@
+---
+title: "2.2.2.2 Reiseherde"
+output: html_notebook
+---
+
+```{r}
+source("setup.r")
+```
+
+```{r}
+d = dbGetQuery(con, "
+SELECT
+  t_Obj.objID,
+  't_Ort'.'ort_name' || ' (Fpl. ' || 't_ort'.'Kat-Nr' || ')' AS Ort,
+  't_ort'.'Kat-Nr',
+  't_Ort'.'ort_kurz' || ' ' || 't_Komplex'.'bef_nr' AS Befund,
+  t_Komplex.bef_art,
+  t_Obj.Anzahl,
+  t_Obj.Notiz,
+  t_Ort.y_lat,
+  t_Ort.x_long,
+  t_Ort.Ort_Fluss
+FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID) 
+  INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+WHERE (((t_Ort.ort_lit) = 'DS')
+  AND (t_obj.Notiz LIKE '%Reise%')
+  AND (t_obj.Individuum NOT LIKE '%DIA%'))")
+d
+```
+
+# Fabrics
+
+```{r}
+d = dbGetQuery(con, "
+SELECT
+  t_Obj.objID,
+  't_Ort'.'ort_name' || ' (Fpl. ' || 't_ort'.'Kat-Nr' || ')' AS Ort,
+  t_Obj.Gewicht,
+  t_Obj.Anzahl,
+  t_Obj.Fabric
+FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID) 
+  INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+WHERE (((t_Ort.ort_lit) = 'DS')
+  AND (t_obj.Notiz LIKE '%Reise%')
+  AND (t_obj.Individuum NOT LIKE '%DIA%'))")
+d
+```
+
+```{r}
+a <- aggregate(d$Anzahl, by=list(Category=substr(d$Fabric, 1, 1)), FUN=sum)
+a$pct <- a$x / sum(a$x) * 100
+a
+```
+
+
+# Kartierung
+
+```{r}
+rh = dbGetQuery(con, "
+SELECT
+  t_Obj.objID,
+  't_Ort'.'ort_name' || ' (Fpl. ' || 't_ort'.'Kat-Nr' || ')' AS Ort,
+  t_Obj.Gewicht,
+  t_Obj.Anzahl,
+  t_Obj.Fabric,
+  t_Ort.y_lat,
+  t_Ort.x_long
+FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID) 
+  INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+WHERE (((t_Ort.ort_lit) = 'DS')
+  AND (t_obj.Notiz LIKE '%Reise%')
+  AND (t_obj.Individuum NOT LIKE '%DIA%'))")
+rh <- dcast(rh, Ort + x_long + y_lat ~ substr(rh$Fabric, 1, 1), value.var = "Gewicht", fun.aggregate = sum)
+```
+
+```{r}
+f9 = dbGetQuery(con, "
+SELECT
+  t_Obj.objID,
+  't_Ort'.'ort_name' || ' (Fpl. ' || 't_ort'.'Kat-Nr' || ')' AS Ort,
+  t_Obj.Gewicht,
+  t_Obj.Anzahl,
+  t_Obj.Fabric,
+  t_Ort.y_lat,
+  t_Ort.x_long
+FROM (t_Ort INNER JOIN t_Komplex ON t_Ort.ortID = t_Komplex.ortID) 
+  INNER JOIN t_Obj ON t_Komplex.komplexID = t_Obj.komplexID
+WHERE (((t_Ort.ort_lit) = 'DS')
+  AND (t_Obj.Fabric LIKE '9%'))")
+f9 <- dcast(f9, Ort + x_long + y_lat ~ substr(f9$Fabric, 1, 1), value.var = "Gewicht", fun.aggregate = sum)
+```
+
+```{r}
+ggplot() + 
+  geom_point(data = f9, aes(x = x_long, y = y_lat, size = `9`), shape = 21, fill = "yellow") + 
+  geom_point(data = rh, aes(x = x_long, y = y_lat, size = `9`), shape = 8) + 
+  geom_text_repel(data = rh, aes(x = x_long, y = y_lat, label = Ort)) + 
+  coord_sf() + 
+  theme_bw()
+```
+
+
