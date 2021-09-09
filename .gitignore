@@ -321,6 +321,7 @@ rsconnect/
 
 ## exclude main.pdf !!!
 main.pdf
+Seidentsticker titelei.pdf
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
