@@ -1,0 +1,144 @@
+---
+output: github_document
+---
+
+# Archäologische Untersuchungen zur eisenzeitlichen Besiedlungsgeschichte des nordwestlichen Kongobeckens
+
+[![DOI]()]()
+
+
+**Dirk Seidensticker**
+
+```{r echo=FALSE, comment=FALSE, warning=FALSE, error=FALSE, message=FALSE}
+library(cowplot)
+library(ggplot2)
+library(ggthemes)
+library(geojsonsf)
+library(raster)
+library(rgdal)
+library(RSQLite)
+library(sf)
+library(tidyr)
+```
+
+This repository contains all data & code to my PhD thesis, submitted in 2017, defended in 2018 and piblished in 2022 at Tübingen University Press.
+
+An open-access PDF can be downloaded [here (DOI: 10.15496/publikation-59846)](https://publikationen.uni-tuebingen.de/xmlui/handle/10900/118472)
+
+[![Cover](https://github.com/dirkseidensticker/nwCongo/raw/master/cover.jpg)](https://publikationen.uni-tuebingen.de/xmlui/handle/10900/118472)
+
+The study provides a comprehensive analysis of archaeological findings from the north-western Congo Basin that were discovered in 1985 and 1987. An inventory of 122 sites and approximately 10,500 objects, mostly ceramic vessels or individual sherds, were examined.
+
+```{r echo=FALSE}
+# landcover data from "Global Land Cover 2000 Project (GLC 2000)" https://ec.europa.eu/jrc/en/scientific-tool/global-land-cover
+temp <- tempfile()
+download.file("https://forobs.jrc.ec.europa.eu/data/products/glc2000/Africa_v5_Grid.zip",temp)
+unzip(temp)
+unlink(temp)
+dpath <- "GRID/africa_v5/hdr.adf"
+x <- new("GDALReadOnlyDataset", dpath)
+getDriver(x)
+getDriverLongName(getDriver(x))
+hdr <- asSGDF_GROD(x)
+hdr <- raster(hdr)
+# extent: xmin,xmax,ymin,ymax
+e  <- extent(5, 33, -17, 13) 
+rfs <- crop(hdr, e) 
+rfs.p <- rasterToPoints(rfs)
+# Make the points a dataframe for ggplot & subset rainforest bands 1-7
+rfs.bd1.7 <- data.frame(rfs.p)
+rfs.bd1.7 <- subset(rfs.bd1.7, band1 >= 1 & band1 <= 7)
+# Swamp forest
+rfs.bd5 <- data.frame(rfs.p)
+rfs.bd5 <- subset(rfs.bd5, band1 == 5)
+# swamp buchland and grassland
+rfs.bd17 <- data.frame(rfs.p)
+rfs.bd17 <- subset(rfs.bd17, band1 == 17)
+# water
+rfs.bd26 <- data.frame(rfs.p)
+rfs.bd26 <- subset(rfs.bd26, band1 == 26)
+
+osm.rivers.lines <- geojsonsf::geojson_sf("gis/OSM_river_lines.geojson")
+osm.rivers.poly <- geojsonsf::geojson_sf("gis/OSM_river_lakes_poly.geojson") %>%
+  sf::st_make_valid()
+
+drv <- RSQLite::dbDriver("SQLite")
+con <- RSQLite::dbConnect(drv, "data/base/nwCongoDB.sqlite")
+
+sitesDS <- RSQLite::dbGetQuery(con, "
+SELECT 
+  t_Ort.ort_name,
+  t_Ort.x_long, 
+  t_Ort.y_lat 
+FROM t_Ort
+WHERE 
+  t_Ort.ort_lit == 'DS' AND 
+  t_Ort.x_long != ''") %>%
+  sf::st_as_sf(coords = c("x_long", "y_lat"),
+               crs = 4326)
+
+sites.others <- RSQLite::dbGetQuery(con, "
+SELECT 
+  t_Ort.ort_name,
+  t_Ort.x_long, 
+  t_Ort.y_lat 
+FROM t_Ort
+WHERE 
+  t_Ort.ort_lit != 'DS' AND 
+  t_Ort.x_long != ''") %>%
+  sf::st_as_sf(coords = c("x_long", "y_lat"), 
+               crs = 4326)
+
+bb <- sf::st_bbox(sitesDS)
+```
+
+```{r Map, warning = FALSE, echo = FALSE, fig.align = 'center', dpi = 300, out.width = '100%'}
+ggplot(sitesDS) +
+  geom_raster(data = rfs.bd1.7, aes(y = y, x = x), fill = '#00734d') + 
+  geom_raster(data = rfs.bd5, aes(y = y, x = x), fill = '#2b916a') + 
+  geom_raster(data = subset(rfs.bd17, x < 20), aes(y = y, x = x), fill = '#54eeb7') + 
+  geom_raster(data = rfs.bd26, aes(y = y, x = x), fill = '#44afe3') + 
+  geom_sf(data = osm.rivers.lines, 
+            size = .5, color = '#44afe3') + 
+    geom_sf(data = osm.rivers.poly, 
+            size = .5, fill = "#44afe3", color = '#44afe3') + 
+  geom_sf(data = sites.others, shape = 21, fill = "grey") +
+  geom_sf(shape = 21, fill = "white", color = "black") + 
+  coord_sf(xlim = c(bb[[1]]-.5, bb[[3]]+.5), 
+           ylim = c(bb[[2]]-.5, bb[[4]]+.5)) + 
+  scale_x_continuous(breaks = seq(14, 20, 1)) + 
+  scale_y_continuous(breaks = seq(-2, 6, 1)) + 
+  theme_few() + 
+  theme(panel.background = element_rect(fill = "#ffebbe"), 
+        axis.title = element_blank()) +
+  NULL
+```
+
+## Folder structure
+
+```{}
+.
+├── bib               (data extracted from the literature)
+├── chpt              (.tex files for the individual chapters)
+├── data              (raw data)
+│   ├── base          (location of **nwCongoDB.sqlite**)
+│   ├── processed
+│   ├── raster
+│   └── vector
+├── fig               (exported figures)
+├── gis               (geodata)
+├── plt               (plates)
+├── py                (>2017 Python files)
+├── py_old            (<2017 Python files)
+├── r                 (>2017 R files)
+├── r_old             (<2017 R files)
+└── tbl               (exported tables)
+```
+
+## Summary
+ 
+The study’s main objectives were to develop a spatio-temporal reference framework for the area based on pottery groups derived from the technological, formal, and ornamental characteristics of the ceramics (chapter 4) and to provide an archaeological synthesis of the available knowledge on the settlement history of the Congo Basin (chapter 5). In addition to stylistic characterizations, the studied ceramics were analyzed regarding fabrication techniques and technology (chapter 3). Fabrics, which reflect processing of clays during potting, were systematically recorded. Macroscopic traces of manufacturing techniques were examined within a representative sample (chapter 3.1) and three independent technology traditions could be identified (chapter 5.3).
+
+## How to cite
+
+D. Seidensticker (2022): 
