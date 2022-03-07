@@ -19,20 +19,6 @@ from the north-western Congo Basin that were discovered in 1985 and
 1987. An inventory of 122 sites and approximately 10,500 objects, mostly
 ceramic vessels or individual sherds, were examined.
 
-    ## An object of class "GDALDriver"
-    ## Slot "handle":
-    ## <pointer: 0x000000001d1a9580>
-
-    ## [1] "Arc/Info Binary Grid"
-
-    ## Warning in result_fetch(res@ptr, n = n): Column `x_long`: mixed type, first seen
-    ## values of type real, coercing other values of type string
-
-    ## Warning in result_fetch(res@ptr, n = n): Column `y_lat`: mixed type, first seen
-    ## values of type real, coercing other values of type string
-
-<img src="README_files/figure-gfm/Map-1.png" width="100%" style="display: block; margin: auto;" />
-
 ## Folder structure
 
     .
@@ -52,6 +38,10 @@ ceramic vessels or individual sherds, were examined.
     ├── r_old             (<2017 R files)
     └── tbl               (exported tables)
 
+## Database Schema
+
+![DB Schema](https://github.com/dirkseidensticker/nwCongo/raw/master/data/base/nwCongoDB.jpg)
+
 ## Summary
 
 The study’s main objectives were to develop a spatio-temporal reference
@@ -68,4 +58,6 @@ independent technology traditions could be identified (chapter 5.3).
 
 ## How to cite
 
-D. Seidensticker (2022):
+D. Seidensticker (2022): Archäologische Untersuchungen zur
+eisenzeitlichen Besiedlungsgeschichte des nordwestlichen Kongobeckens.
+Daten und Code.
