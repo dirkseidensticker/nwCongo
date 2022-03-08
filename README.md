@@ -5,11 +5,8 @@
 
 **Dirk Seidensticker**
 
-This repository contains all data & code to my PhD thesis, submitted in
-2017, defended in 2018 and piblished in 2022 at Tübingen University
-Press.
-
-An open-access PDF can be downloaded [here (DOI:
+This repository contains all data & code to my PhD thesis (submitted in
+2017 & defended in 2018). An open-access PDF can be downloaded [here (DOI:
 10.15496/publikation-59846)](https://publikationen.uni-tuebingen.de/xmlui/handle/10900/118472)
 
 [![Cover](https://github.com/dirkseidensticker/nwCongo/raw/master/cover.jpg)](https://publikationen.uni-tuebingen.de/xmlui/handle/10900/118472)
@@ -60,4 +57,4 @@ independent technology traditions could be identified (chapter 5.3).
 
 D. Seidensticker (2022): Archäologische Untersuchungen zur
 eisenzeitlichen Besiedlungsgeschichte des nordwestlichen Kongobeckens.
-Daten und Code.
+Daten und Computercode. DOI: 
