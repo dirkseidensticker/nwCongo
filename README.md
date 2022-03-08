@@ -1,7 +1,7 @@
 
 # Archäologische Untersuchungen zur eisenzeitlichen Besiedlungsgeschichte des nordwestlichen Kongobeckens
 
-[![DOI]()]()
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6337181.svg)](https://doi.org/10.5281/zenodo.6337181)
 
 **Dirk Seidensticker**
 
@@ -57,4 +57,5 @@ independent technology traditions could be identified (chapter 5.3).
 
 D. Seidensticker (2022): Archäologische Untersuchungen zur
 eisenzeitlichen Besiedlungsgeschichte des nordwestlichen Kongobeckens.
-Daten und Computercode. DOI: 
+Daten und Computercode. DOI: [10.5281/zenodo.6337181](https://doi.org/10.5281/zenodo.6337181
+)
